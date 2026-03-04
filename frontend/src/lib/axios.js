@@ -4,7 +4,7 @@ import { createBrowserHistory } from "history";
 const history = createBrowserHistory();
 
 const api = axios.create({
-  baseURL: "http://localhost:3000",
+  baseURL: "https://acute-restaurant.vercel.app",
   withCredentials: true
 });
 

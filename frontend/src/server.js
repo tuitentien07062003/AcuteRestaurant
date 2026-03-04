@@ -23,7 +23,7 @@ const PORT = process.env.PORT || 3000;
 const app = express();
 
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: "https://acute-restaurant.vercel.app",
   credentials: true
 }));
 
@@ -36,7 +36,8 @@ app.use(session({
   saveUninitialized: false,
   cookie: {
       httpOnly: true,
-      sameSite: "lax",
+      secure: true,
+      sameSite: "none",
       maxAge: 1000 * 60 * 60 * 8,
     },
   })
