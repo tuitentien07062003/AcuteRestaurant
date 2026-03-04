@@ -9,7 +9,7 @@ export default function KitchenCard({ order, status, onReload }) {
   useEffect(() => {
     const fetchDetails = async () => {
       const res = await axios.get(
-        `http://localhost:3000/acute/bill-orders/${order.id}`,
+        `https://acuterestaurant.onrender.com/acute/bill-orders/${order.id}`,
         { withCredentials: true }
       );
       setItems(res.data.details);

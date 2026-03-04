@@ -14,7 +14,7 @@ const LeftSidebar = ( onSelect ) => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await axios.get("http://localhost:3000/acute/auth/me", { withCredentials: true });
+        const res = await axios.get("https://acuterestaurant.onrender.com/acute/auth/me", { withCredentials: true });
         setUser(res.data.user);
       } catch (err) {
         console.error("Failed to fetch user:", err);
@@ -27,7 +27,7 @@ const LeftSidebar = ( onSelect ) => {
 
   const handleLogout = async () => {
     try {
-      await axios.post("http://localhost:3000/acute/auth/logout", {}, { withCredentials: true });
+      await axios.post("https://acuterestaurant.onrender.com/acute/auth/logout", {}, { withCredentials: true });
       navigate("/login");
     } catch (err) {
       console.error("Logout failed:", err);

@@ -37,7 +37,7 @@ const OrderDetailDialog = ({ open, onOpenChange, billId }) => {
       try {
         setLoading(true)
         const res = await axios.get(
-          `http://localhost:3000/acute/bill-orders/${billId}`,
+          `https://acuterestaurant.onrender.com/acute/bill-orders/${billId}`,
           { withCredentials: true }
         )
 

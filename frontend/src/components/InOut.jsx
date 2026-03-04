@@ -18,7 +18,7 @@ import {
     const handleInOut = async () => {
       setLoading(true);
       try {
-        const res = await axios.post("http://localhost:3000/acute/timesheet/check-in", {
+        const res = await axios.post("https://acuterestaurant.onrender.com/acute/timesheet/check-in", {
           internal_id: internalId,
         }, { withCredentials: true });
 

@@ -13,7 +13,7 @@ const PosHeader = ({ onCategoryChange }) => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await axios.get("http://localhost:3000/acute/menu-categories",
+        const res = await axios.get("https://acuterestaurant.onrender.com/acute/menu-categories",
           { withCredentials: true }
         );
         setCategories(res.data);

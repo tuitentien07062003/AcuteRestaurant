@@ -59,7 +59,7 @@ export default function Order({ items, setItems }) {
       };
 
       const res = await axios.post(
-        "http://localhost:3000/acute/bill-orders",
+        "https://acuterestaurant.onrender.com/acute/bill-orders",
         orderData,
         { withCredentials: true }
       );

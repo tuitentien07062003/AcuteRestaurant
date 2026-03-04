@@ -19,7 +19,7 @@ export default function ApplyVoucherDialog({ open, setOpen, onApply }) {
     setLoading(true);
     try {
       const res = await axios.get(
-        `http://localhost:3000/acute/voucher/code/${code}`,
+        `https://acuterestaurant.onrender.com/acute/voucher/code/${code}`,
         { withCredentials: true }
       );
 

@@ -27,7 +27,7 @@ export default function RefundDialog({ open, setOpen, onDone }) {
     setLoading(true);
     try {
       const res = await axios.get(
-        `http://localhost:3000/acute/refund/${orderId}`,
+        `https://acuterestaurant.onrender.com/acute/refund/${orderId}`,
         { withCredentials: true }
       );
 
@@ -53,7 +53,7 @@ export default function RefundDialog({ open, setOpen, onDone }) {
     setLoading(true);
     try {
       await axios.post(
-        `http://localhost:3000/acute/refund/${order.id}`,
+        `https://acuterestaurant.onrender.com/acute/refund/${order.id}`,
         { reason },
         { withCredentials: true }
       );

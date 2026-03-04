@@ -14,7 +14,7 @@ export default function MenuOrder({ category, onAdd }) {
   useEffect(() => {
     const fetchFoods = async () => {
       try {
-        const res = await axios.get(`http://localhost:3000/acute/menu/menu-items?category=${category}`,
+        const res = await axios.get(`https://acuterestaurant.onrender.com/acute/menu/menu-items?category=${category}`,
           { withCredentials: true }
         );
         setFoods(res.data);

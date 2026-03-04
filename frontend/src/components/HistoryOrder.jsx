@@ -47,7 +47,7 @@ const HistoryOrder = () => {
     const fetchBillOrders = async () => {
       try {
         const res = await axios.get(
-          "http://localhost:3000/acute/bill-orders",
+          "https://acuterestaurant.onrender.com/acute/bill-orders",
           { withCredentials: true }
         )
 

@@ -31,7 +31,7 @@ export default function Login() {
     setServerError("");
     try {
       const res = await axios.post(
-        "http://localhost:3000/acute/auth/login",
+        "https://acuterestaurant.onrender.com/acute/auth/login",
         form,
         { withCredentials: true }
       );
