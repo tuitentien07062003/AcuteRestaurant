@@ -2,35 +2,44 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { ShoppingCart } from "lucide-react"
-import axios from "axios"
-import { useEffect, useState } from "react"
+import { useContext, useState } from "react"
 import { useNavigate } from "react-router-dom"
+import useInit from "@/hooks/useInit"
+import { GlobalContext } from "@/context/GlobalContext"
+import { initMenuOrder } from "@/init/menuOrderInit"
 
 export default function MenuOrder({ category, onAdd }) {
-  const [foods, setFoods] = useState([])
-  const [loading, setLoading] = useState(true)
+  const ctx = useContext(GlobalContext);
+  const { menu } = ctx;
+  const [loading, setLoading] = useState(false);
+  const [lastCategory, setLastCategory] = useState(null);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchFoods = async () => {
-      try {
-        const res = await axios.get(`https://acuterestaurant.onrender.com/acute/menu/menu-items?category=${category}`,
-          { withCredentials: true }
-        );
-        setFoods(res.data);
-      } catch (error) {
-        console.log("Lỗi tải món ăn:", error);
-        navigate("/login");
-      } finally {
+  // load data when category changes
+  useInit(() => {
+    if (!category) {
+      console.log("[MenuOrder] No category yet");
+      return;
+    }
+    // Only fetch if category changed
+    if (lastCategory === category) {
+      console.log("[MenuOrder] Category unchanged, skipping fetch");
+      return;
+    }
+    console.log("[MenuOrder] Category changed to:", category);
+    setLoading(true);
+    initMenuOrder(ctx, category)
+      .catch(e => console.error("[MenuOrder] Error:", e))
+      .finally(() => {
+        setLastCategory(category);
         setLoading(false);
-      }
-    };
-
-    fetchFoods();
+      });
   }, [category]);
 
   if (loading)
     return <div className="text-center py-4 text-[#0077b6]">Đang tải...</div>;
+
+  const foods = menu || [];
   
   return (
     <TooltipProvider>

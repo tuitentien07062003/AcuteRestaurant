@@ -4,8 +4,8 @@ import ApplyVoucherDialog from "./DiscountDialogPos.jsx";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Trash2, Plus, Minus } from "lucide-react";
-import axios from "axios";
 import { toast } from "sonner";
+import { createBillOrder } from "@/api/billOrders";
 
 export default function Order({ items, setItems }) {
   const [payment, setPayment] = useState("Cash");   // Cash | Momo
@@ -58,11 +58,7 @@ export default function Order({ items, setItems }) {
         }))
       };
 
-      const res = await axios.post(
-        "https://acuterestaurant.onrender.com/acute/bill-orders",
-        orderData,
-        { withCredentials: true }
-      );
+      await createBillOrder(orderData);
       toast.success("Đặt món thành công!");
       setItems([]);
       setVoucher(null);

@@ -1,5 +1,4 @@
 import { useState } from "react";
-import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -9,6 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { checkVoucherCode } from "@/api/vouchers";
 
 export default function ApplyVoucherDialog({ open, setOpen, onApply }) {
   const [code, setCode] = useState("");
@@ -18,12 +18,8 @@ export default function ApplyVoucherDialog({ open, setOpen, onApply }) {
   const handleCheckCode = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(
-        `https://acuterestaurant.onrender.com/acute/voucher/code/${code}`,
-        { withCredentials: true }
-      );
-
-      setVoucher(res.data);
+      const data = await checkVoucherCode(code);
+      setVoucher(data);
     } catch (err) {
       toast.error("Mã không hợp lệ");
       setVoucher(null);

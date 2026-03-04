@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react"
-import axios from "axios"
+import { useState } from "react"
+import useInit from "@/hooks/useInit"
+import { fetchBillDetail } from "@/api/billOrders"
 import {
   Dialog,
   DialogContent,
@@ -30,27 +31,21 @@ const OrderDetailDialog = ({ open, onOpenChange, billId }) => {
   const [bill, setBill] = useState(null)
   const [details, setDetails] = useState([])
 
-  useEffect(() => {
-    if (!billId || !open) return
-
-    const fetchDetail = async () => {
+  useInit(() => {
+    if (!billId || !open) return;
+    async function load() {
       try {
-        setLoading(true)
-        const res = await axios.get(
-          `https://acuterestaurant.onrender.com/acute/bill-orders/${billId}`,
-          { withCredentials: true }
-        )
-
-        setBill(res.data.bill)
-        setDetails(res.data.details)
+        setLoading(true);
+        const res = await fetchBillDetail(billId);
+        setBill(res.bill || res.data?.bill || null);
+        setDetails(res.details || res.data?.details || []);
       } catch (err) {
-        console.error("Lỗi tải chi tiết đơn:", err)
+        console.error("Lỗi tải chi tiết đơn:", err);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
     }
-
-    fetchDetail()
+    load();
   }, [billId, open])
 
   return (

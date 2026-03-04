@@ -22,8 +22,20 @@ dotenv.config();
 const PORT = process.env.PORT || 3000;
 const app = express();
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "https://acute-restaurant.vercel.app"
+];
+
 app.use(cors({
-  origin: "https://acute-restaurant.vercel.app",
+  origin: function(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   credentials: true
 }));
 
@@ -32,16 +44,15 @@ app.use(express.json());
 app.use(session({
   name: "pos.sid",
   secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  // cookie: {
-  //     httpOnly: true,
-  //     secure: true,
-  //     sameSite: "none",
-  //     maxAge: 1000 * 60 * 60 * 8,
-  //   },
-  })
-);
+  resave: true,
+  saveUninitialized: true,
+  cookie: {
+    httpOnly: true,
+    secure: false, // localhost không dùng https
+    sameSite: "lax", // allow cookies cho requests
+    maxAge: 1000 * 60 * 60 * 8, // 8 hours
+  },
+}));
 
 app.use("/acute/employee", requireLogin, employeesRoutes);
 app.use("/acute/store", requireLogin, storeRoutes);

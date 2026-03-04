@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react"
-import axios from "axios"
+import { useState, useContext } from "react"
 import { useNavigate } from "react-router-dom"
 import  OrderDetailDialog from "./BillDetailDialog.jsx"
+import useInit from "@/hooks/useInit"
+import { GlobalContext } from "@/context/GlobalContext"
+import { initHistory } from "@/init/historyInit"
 import {
   Table,
   TableBody,
@@ -35,32 +37,25 @@ const paymentMethod = {
 }
 
 const HistoryOrder = () => {
-  const [bill, setBill] = useState([])
-  const [loading, setLoading] = useState(true)
+  const ctx = useContext(GlobalContext);
+  const [loading, setLoading] = useState(ctx.bills.length === 0)
   const [currentPage, setCurrentPage] = useState(1)
   const [openDetail, setOpenDetail] = useState(false)
   const [selectedBillId, setSelectedBillId] = useState(null)  
   const pageSize = 10
   const navigate = useNavigate()
 
-  useEffect(() => {
-    const fetchBillOrders = async () => {
-      try {
-        const res = await axios.get(
-          "https://acuterestaurant.onrender.com/acute/bill-orders",
-          { withCredentials: true }
-        )
-
-        setBill(res.data);
-      } catch (error) {
-        navigate("/login")
-      } finally {
-        setLoading(false)
-      }
+  useInit(() => {
+    if (ctx.bills && ctx.bills.length > 0) {
+      console.log("[HistoryOrder] Bills already loaded");
+      setLoading(false);
+      return;
     }
-
-    fetchBillOrders()
-  }, [])
+    setLoading(true);
+    initHistory(ctx)
+      .catch(e => console.error("[HistoryOrder] Error:", e))
+      .finally(() => setLoading(false));
+  }, []);
 
   if (loading)
     return (
@@ -68,6 +63,8 @@ const HistoryOrder = () => {
         Đang tải dữ liệu...
       </div>
     )
+
+  const bill = ctx.bills;
 
   const totalPages = Math.ceil(bill.length / pageSize)
   const startIndex = (currentPage - 1) * pageSize

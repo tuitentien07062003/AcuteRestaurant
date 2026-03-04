@@ -1,48 +1,41 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
+import { useState } from "react";
+import useInit from "@/hooks/useInit";
+import { fetchBillDetail, updateOrderStatus, completeOrder } from "@/api/billOrders";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function KitchenCard({ order, status, onReload }) {
   const [items, setItems] = useState([]);
 
-  useEffect(() => {
-    const fetchDetails = async () => {
-      const res = await axios.get(
-        `https://acuterestaurant.onrender.com/acute/bill-orders/${order.id}`,
-        { withCredentials: true }
-      );
-      setItems(res.data.details);
-    };
-    fetchDetails();
+  useInit(() => {
+    async function load() {
+      try {
+        const res = await fetchBillDetail(order.id);
+        setItems(res.details || res.data?.details || []);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    load();
   }, [order.id]);
 
   const handleNext = async () => {
-    if (status === "Pending") {
-      await axios.patch(
-        `http://localhost:3000/acute/bill-orders/${order.id}/status`,
-        { status: "Cooking" },
-        { withCredentials: true }
-      );
-    }
+    try {
+      if (status === "Pending") {
+        await updateOrderStatus(order.id, "Cooking");
+      }
 
-    if (status === "Cooking") {
-      await axios.patch(
-        `http://localhost:3000/acute/bill-orders/${order.id}/status`,
-        { status: "Ready" },
-        { withCredentials: true }
-      );
-    }
+      if (status === "Cooking") {
+        await updateOrderStatus(order.id, "Ready");
+      }
 
-    if (status === "Ready") {
-      await axios.patch(
-        `http://localhost:3000/acute/bill-orders/${order.id}/complete`,
-        {},
-        { withCredentials: true }
-      );
+      if (status === "Ready") {
+        await completeOrder(order.id);
+      }
+      onReload();
+    } catch (e) {
+      console.error(e);
     }
-
-    onReload();
   };
 
   return (

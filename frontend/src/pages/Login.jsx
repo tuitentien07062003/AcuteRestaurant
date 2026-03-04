@@ -1,14 +1,19 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import useInit from "@/hooks/useInit";
+import { GlobalContext } from "@/context/GlobalContext";
+import { initLogin, doLogin } from "@/init/loginInit";
 
 export default function Login() {
   const navigate = useNavigate();
+  const ctx = useContext(GlobalContext);
+  useInit(() => initLogin(ctx), []);
+
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState("");
@@ -30,20 +35,11 @@ export default function Login() {
     setLoading(true);
     setServerError("");
     try {
-      const res = await axios.post(
-        "https://acuterestaurant.onrender.com/acute/auth/login",
-        form,
-        { withCredentials: true }
-      );
-
-      const role = res.data.user.role;
-
-      // redirect theo role
+      const data = await doLogin(ctx, form);
+      const role = data.user.role;
       if (role === "SM" || role === "SUP" || role === "CREW") navigate("/pos");
     } catch (err) {
-      setServerError(
-        err.response?.data?.message || "Đăng nhập thất bại"
-      );
+      setServerError(err.message || "Đăng nhập thất bại");
     } finally {
       setLoading(false);
     }

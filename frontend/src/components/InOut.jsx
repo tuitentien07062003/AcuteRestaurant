@@ -1,5 +1,4 @@
 import { useState } from "react";
-import axios from "axios";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { toast } from "sonner";
@@ -10,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
  } from "./ui/dialog";
+import { checkInOut } from "@/api/timesheet";
 
  export default function InOut({ open, setOpen  }) {
     const [internalId, setInternalId] = useState("");
@@ -18,19 +18,20 @@ import {
     const handleInOut = async () => {
       setLoading(true);
       try {
-        const res = await axios.post("https://acuterestaurant.onrender.com/acute/timesheet/check-in", {
-          internal_id: internalId,
-        }, { withCredentials: true });
-
-        if (res.data.type === "CHECK_IN") {
+        try {
+        const res = await checkInOut(internalId);
+        if (res.type === "CHECK_IN") {
             toast.success("Vào ca thành công");
         }
-        if (res.data.type === "CHECK_OUT") {
-            toast.success("Ra ca thành công. Thời gian làm việc: " + res.data.total_hours + " giờ");
+        if (res.type === "CHECK_OUT") {
+            toast.success("Ra ca thành công. Thời gian làm việc: " + res.total_hours + " giờ");
         }
 
         setInternalId("");
         setOpen(false);
+      } catch (err) {
+        throw err;
+      }
       } catch (err) {
         toast.error( err.response?.data?.message || "Có lỗi xảy ra.",
         );

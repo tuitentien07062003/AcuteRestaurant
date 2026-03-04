@@ -1,17 +1,22 @@
-import { useState } from 'react'
+import { useState, useContext } from 'react'
 import PosHeader from '@/components/PosHeader'
 import LeftSidebar from '@/components/LeftSidebar'
 import Order from '@/components/Order'
 import MenuOrder from '@/components/MenuOrder'
 import KitchenScreen from '@/components/KitchenScreen'
 import HistoryOrder from '@/components/HistoryOrder'
+import useInit from '@/hooks/useInit'
+import { initPos } from '@/init/posInit'
+import { GlobalContext } from '@/context/GlobalContext'
 
 const Pos = () => {
-    const [orderItems, setOrderItems] = useState([]);
-    const [activeCategory, setActiveCategory] = useState(null);
-    const [activeComponent, setActiveComponent] = useState('menu'); 
+const ctx = useContext(GlobalContext);
+  useInit(() => initPos(ctx), []);
+  const [orderItems, setOrderItems] = useState([]);
+  const { activeCategory } = ctx;
+  const [activeComponent, setActiveComponent] = useState('menu');
 
-    const handleToOrder = (item) => {
+  const handleToOrder = (item) => {
         setOrderItems(prev => {
             const existingItem = prev.find(i => i.id === item.id);
             return existingItem ? prev.map(i =>
@@ -20,7 +25,7 @@ const Pos = () => {
         })
     }
 
-    return (
+  return (
     <div className="flex">
       <LeftSidebar onSelect={setActiveComponent} />
       
@@ -28,7 +33,7 @@ const Pos = () => {
       <div className="flex-1 px-4">
         {activeComponent === 'menu' && (
           <>
-            <PosHeader onCategoryChange={setActiveCategory}/>
+            <PosHeader onCategoryChange={ctx.setActiveCategory} />
             <MenuOrder
               category={activeCategory}
               onAdd={handleToOrder}/>
@@ -45,6 +50,6 @@ const Pos = () => {
         {activeComponent === 'menu' && <Order items={orderItems} setItems={setOrderItems} />}
       </div>
     </div>
-)}
-
+  )
+}
 export default Pos

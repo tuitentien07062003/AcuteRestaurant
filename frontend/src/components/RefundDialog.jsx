@@ -1,5 +1,4 @@
 import { useState } from "react";
-import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner";
+import { checkRefundOrder, submitRefund } from "@/api/refund";
 
 export default function RefundDialog({ open, setOpen, onDone }) {
   const [orderId, setOrderId] = useState("");
@@ -26,12 +26,8 @@ export default function RefundDialog({ open, setOpen, onDone }) {
 
     setLoading(true);
     try {
-      const res = await axios.get(
-        `https://acuterestaurant.onrender.com/acute/refund/${orderId}`,
-        { withCredentials: true }
-      );
-
-      setOrder(res.data);
+      const data = await checkRefundOrder(orderId);
+      setOrder(data);
       toast.success("Đơn hợp lệ");
 
     } catch (err) {
@@ -52,11 +48,7 @@ export default function RefundDialog({ open, setOpen, onDone }) {
 
     setLoading(true);
     try {
-      await axios.post(
-        `https://acuterestaurant.onrender.com/acute/refund/${order.id}`,
-        { reason },
-        { withCredentials: true }
-      );
+      await submitRefund(order.id, reason);
 
       toast.success("Hoàn tiền thành công");
       setOpen(false);

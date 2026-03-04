@@ -1,40 +1,36 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
+import { useContext } from "react";
 import KitchenColumn from "./KitchenColumn";
+import useInit from "@/hooks/useInit";
+import { GlobalContext } from "@/context/GlobalContext";
+import { initKitchen } from "@/init/kitchenInit";
 
 export default function KitchenScreen() {
-  const [orders, setOrders] = useState([]);
+  const ctx = useContext(GlobalContext);
 
-  const fetchOrders = async () => {
-    const res = await axios.get(
-      "https://acuterestaurant.onrender.com/acute/bill-orders",
-      { withCredentials: true }
-    );
-    setOrders(res.data);
-  };
-
-  useEffect(() => {
-    fetchOrders();
-    const timer = setInterval(fetchOrders, 5000);
-    return () => clearInterval(timer);
+  useInit(() => {
+    if (!ctx.bills || ctx.bills.length === 0) {
+      initKitchen(ctx).catch(e => console.error("[KitchenScreen] Error:", e));
+    }
   }, []);
+
+  const orders = ctx.bills;
 
   return (
     <div className="h-screen grid grid-cols-3 gap-3 p-3">
       <KitchenColumn
         title="Pending"
         orders={orders.filter(o => o.status === "Pending")}
-        onReload={fetchOrders}
+        onReload={() => initKitchen(ctx)}
       />
       <KitchenColumn
         title="Cooking"
         orders={orders.filter(o => o.status === "Cooking")}
-        onReload={fetchOrders}
+        onReload={() => initKitchen(ctx)}
       />
       <KitchenColumn
         title="Ready"
         orders={orders.filter(o => o.status === "Ready")}
-        onReload={fetchOrders}
+        onReload={() => initKitchen(ctx)}
       />
     </div>
   );

@@ -1,34 +1,26 @@
-import { useEffect, useState } from "react"
+import { useState, useContext } from "react"
 import { useNavigate } from "react-router-dom"
 import InOut from "./InOut.jsx"
 import RefundDialog from './RefundDialog.jsx'
-import axios from "axios"
 import { CalendarCheck, CalendarSync, UtensilsCrossed, Monitor, BarChart, LogOut } from "lucide-react";
 import logo from "../assets/logo.png";
+import { GlobalContext } from "@/context/GlobalContext";
+import { logout } from "@/api/auth";
+import useInit from "@/hooks/useInit";
+import { initLogin } from "@/init/loginInit";
 
 const LeftSidebar = ( onSelect ) => {
-  const [user, setUser] = useState(null);
+  const ctx = useContext(GlobalContext);
+  const { user } = ctx;
   const [openInOut, setOpenInOut] = useState(false);
   const [openRefund, setOpenRefund] = useState(false);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await axios.get("https://acuterestaurant.onrender.com/acute/auth/me", { withCredentials: true });
-        setUser(res.data.user);
-      } catch (err) {
-        console.error("Failed to fetch user:", err);
-        navigate("/login");
-      }
-    };
-
-    fetchUser();
-  }, []);
+  useInit(() => initLogin(ctx), []);
 
   const handleLogout = async () => {
     try {
-      await axios.post("https://acuterestaurant.onrender.com/acute/auth/logout", {}, { withCredentials: true });
+      await logout();
       navigate("/login");
     } catch (err) {
       console.error("Logout failed:", err);
