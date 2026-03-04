@@ -4,6 +4,7 @@ import InOut from "./InOut.jsx"
 import RefundDialog from './RefundDialog.jsx'
 import axios from "axios"
 import { CalendarCheck, CalendarSync, UtensilsCrossed, Monitor, BarChart, LogOut } from "lucide-react";
+import logo from "../assets/logo.png";
 
 const LeftSidebar = ( onSelect ) => {
   const [user, setUser] = useState(null);
@@ -42,7 +43,7 @@ const LeftSidebar = ( onSelect ) => {
         {/* Tên thương hiệu */}
         <div className="px-2 min-h-15 flex items-center gap-3">
             <img
-              src="/src/assets/logo.png"
+              src={logo}
               alt="logo"
               className="w-12 h-12 object-contain rounded-full"
             />
