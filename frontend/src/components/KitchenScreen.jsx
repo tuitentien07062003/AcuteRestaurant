@@ -16,22 +16,29 @@ export default function KitchenScreen() {
   const orders = ctx.bills;
 
   return (
-    <div className="h-screen grid grid-cols-3 gap-3 p-3">
+    <div className="h-full grid grid-cols-3 gap-3 p-3">
       <KitchenColumn
-        title="Pending"
+        title="Chờ xử lý"
+        titleColor="text-yellow-600"
+        bgColor="bg-yellow-50"
         orders={orders.filter(o => o.status === "Pending")}
         onReload={() => initKitchen(ctx)}
       />
       <KitchenColumn
-        title="Cooking"
+        title="Đang nấu"
+        titleColor="text-blue-600"
+        bgColor="bg-blue-50"
         orders={orders.filter(o => o.status === "Cooking")}
         onReload={() => initKitchen(ctx)}
       />
       <KitchenColumn
-        title="Ready"
+        title="Hoàn thành"
+        titleColor="text-green-600"
+        bgColor="bg-green-50"
         orders={orders.filter(o => o.status === "Ready")}
         onReload={() => initKitchen(ctx)}
       />
     </div>
   );
 }
+

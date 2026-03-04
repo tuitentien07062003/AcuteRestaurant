@@ -10,44 +10,59 @@ import { initPos } from '@/init/posInit'
 import { GlobalContext } from '@/context/GlobalContext'
 
 const Pos = () => {
-const ctx = useContext(GlobalContext);
+  const ctx = useContext(GlobalContext);
   useInit(() => initPos(ctx), []);
   const [orderItems, setOrderItems] = useState([]);
   const { activeCategory } = ctx;
   const [activeComponent, setActiveComponent] = useState('menu');
 
   const handleToOrder = (item) => {
-        setOrderItems(prev => {
-            const existingItem = prev.find(i => i.id === item.id);
-            return existingItem ? prev.map(i =>
-                    i.id === item.id ? { ...i, qty: i.qty + 1 } : i
-                ) : [...prev, { ...item, qty: 1 }];
-        })
-    }
+    setOrderItems(prev => {
+      const existingItem = prev.find(i => i.id === item.id);
+      return existingItem 
+        ? prev.map(i => i.id === item.id ? { ...i, qty: i.qty + 1 } : i)
+        : [...prev, { ...item, qty: 1 }];
+    })
+  }
 
   return (
-    <div className="flex">
+    <div className="h-screen flex overflow-hidden bg-gray-50">
+      {/* Left Sidebar - Fixed width */}
       <LeftSidebar onSelect={setActiveComponent} />
       
-      {/* Phần nội dung bên phải */}
-      <div className="flex-1 px-4">
-        {activeComponent === 'menu' && (
-          <>
-            <PosHeader onCategoryChange={ctx.setActiveCategory} />
-            <MenuOrder
-              category={activeCategory}
-              onAdd={handleToOrder}/>
-          </>
-        )}
-        {activeComponent === 'history' && (
-          <HistoryOrder />
-        )}
-        {activeComponent === 'kitchen' && (
-          <KitchenScreen />
-        )}
+      {/* Main Content Area - Flexible */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Header & Menu or Other Components */}
+        <div className="flex-1 flex flex-col min-h-0 px-4 pb-2">
+          {activeComponent === 'menu' && (
+            <>
+              <PosHeader onCategoryChange={ctx.setActiveCategory} />
+              <div className="flex-1 min-h-0 overflow-y-auto py-3">
+                <MenuOrder
+                  category={activeCategory}
+                  onAdd={handleToOrder}
+                />
+              </div>
+            </>
+          )}
+          {activeComponent === 'history' && (
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              <HistoryOrder />
+            </div>
+          )}
+          {activeComponent === 'kitchen' && (
+            <div className="flex-1 min-h-0">
+              <KitchenScreen />
+            </div>
+          )}
+        </div>
       </div>
-      <div>
-        {activeComponent === 'menu' && <Order items={orderItems} setItems={setOrderItems} />}
+      
+      {/* Order Panel - Fixed width, full height */}
+      <div className="h-full">
+        {activeComponent === 'menu' && (
+          <Order items={orderItems} setItems={setOrderItems} />
+        )}
       </div>
     </div>
   )
