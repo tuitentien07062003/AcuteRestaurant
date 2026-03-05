@@ -2,11 +2,15 @@ import axios from "axios";
 
 const axiosClient = axios.create({
   baseURL: "https://acuterestaurant.onrender.com/acute",
-  withCredentials: true,
+  withCredentials: false, // Không cần credentials cho JWT
 });
 
-// Log requests
+// Thêm token vào header
 axiosClient.interceptors.request.use(config => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
   console.log(`[API REQUEST] ${config.method.toUpperCase()} ${config.url}`);
   return config;
 });

@@ -9,6 +9,7 @@ export async function initLogin(ctx) {
 
 export async function doLogin(ctx, form) {
   const data = await loginApi(form);
+  localStorage.setItem('token', data.token);
   ctx.setUser(data.user);
   return data;
 }

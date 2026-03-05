@@ -1,4 +1,5 @@
 import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 import { User } from '../models/User.js';
 import { Employee } from '../models/Employee.js';
 
@@ -31,16 +32,26 @@ export const login = async (req, res) => {
         const now = new Date();
         await user.update({ last_login: now });
 
-        req.session.user = {
-            id: user.id,
-            employee_id: user.employee_id,
-            role: user.employee.role,
-            full_name: user.employee.full_name
-        };
+        const token = jwt.sign(
+            {
+                id: user.id,
+                employee_id: user.employee_id,
+                role: user.employee.role,
+                full_name: user.employee.full_name
+            },
+            process.env.JWT_SECRET || 'default_secret',
+            { expiresIn: '8h' }
+        );
 
         res.status(200).json({
             message: 'Đăng nhập thành công',
-            user: req.session.user
+            token,
+            user: {
+                id: user.id,
+                employee_id: user.employee_id,
+                role: user.employee.role,
+                full_name: user.employee.full_name
+            }
         });
             
     } catch (error) {
@@ -50,24 +61,19 @@ export const login = async (req, res) => {
 }
 
 export const logout = (req, res) => {
-  req.session.destroy(err => {
-    if (err) {
-      return res.status(500).json({ message: "Logout failed" });
-    }
-    res.clearCookie("pos.sid",
-        {
-            httpOnly: true,
-            sameSite: isProduction ? "none" : "lax",
-            secure: isProduction,
-        }
-    );
-    res.status(200).json({ message: "Đã đăng xuất" });
-  });
+  // Với JWT, logout chỉ cần client xóa token
+  res.status(200).json({ message: "Đã đăng xuất" });
 };
 
 export const me = async (req, res) => {
-  if (!req.session.user) {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) {
     return res.status(401).json({ message: "Chưa đăng nhập" });
   }
-  res.status(200).json({ user: req.session.user });
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'default_secret');
+    res.status(200).json({ user: decoded });
+  } catch (e) {
+    res.status(401).json({ message: "Token không hợp lệ" });
+  }
 };

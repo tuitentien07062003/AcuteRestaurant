@@ -14,7 +14,6 @@ import refundRoutes from './routes/refundRoutes.js'
 import { connectDB } from './config/db.js';
 import path from 'path';
 import cors from 'cors';
-import session from 'express-session';
 import { requireLogin } from './middlewares/authMiddleware.js';
 
 dotenv.config();
@@ -44,18 +43,6 @@ app.use(cors({
 
 app.use("/uploads", express.static(path.join(process.cwd(), "src/uploads")));
 app.use(express.json());
-app.use(session({
-  name: "pos.sid",
-  secret: process.env.SESSION_SECRET,
-  resave: true,
-  saveUninitialized: true,
-  cookie: {
-    httpOnly: true,
-    secure: isProduction, // Only secure in production
-    sameSite: isProduction ? "none" : "lax", // none for cross-origin in prod, lax for dev
-    maxAge: 1000 * 60 * 60 * 8, // 8 hours
-  },
-}));
 
 app.use("/acute/employee", requireLogin, employeesRoutes);
 app.use("/acute/store", requireLogin, storeRoutes);

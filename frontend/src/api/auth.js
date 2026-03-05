@@ -5,6 +5,7 @@ export function login(form) {
 }
 
 export function logout() {
+  localStorage.removeItem('token');
   return axiosClient.post("/auth/logout");
 }
 
