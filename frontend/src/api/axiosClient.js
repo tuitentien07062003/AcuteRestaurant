@@ -19,10 +19,11 @@ axiosClient.interceptors.response.use(
   },
   err => {
     console.log(`[API ERROR] ${err.response?.status} ${err.config.url}`, err.response?.data);
-    if (err.response?.status === 401) {
-      console.warn("[API] 401 Unauthorized", err.config.url);
-      window.location.href = "/login";
-    }
+    // Comment out to avoid reload loop
+    // if (err.response?.status === 401) {
+    //   console.warn("[API] 401 Unauthorized", err.config.url);
+    //   window.location.href = "/login";
+    // }
     return Promise.reject(err);
   }
 );
