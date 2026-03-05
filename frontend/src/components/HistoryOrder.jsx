@@ -1,4 +1,4 @@
-import { useState, useContext, useCallback } from "react"
+import { useState, useContext, useCallback, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import OrderDetailDialog from "./BillDetailDialog.jsx"
 import useInit from "@/hooks/useInit"
@@ -76,7 +76,7 @@ const HistoryOrder = () => {
   const startIndex = (currentPage - 1) * pageSize
   const currentBills = bill.slice(startIndex, startIndex + pageSize)
 
-  const totalRevenue = bill.reduce((sum, order) => {
+  const totalRevenue = useMemo(() => bill.reduce((sum, order) => {
     const discount = Number(order.discount_amount || 0);
     let refundAmount = 0;
     if (order.status === "Refund") {
@@ -84,7 +84,7 @@ const HistoryOrder = () => {
     }
     const netSales = Number(order.total_amount) - discount - refundAmount;
     return sum + netSales
-  }, 0)
+  }, 0), [bill]);
 
   // Get today's date for filename
   const getTodayDate = () => {
@@ -131,7 +131,7 @@ const HistoryOrder = () => {
   }, [bill]);
 
   // Stats cards data
-  const stats = [
+  const stats = useMemo(() => [
     {
       label: "Doanh thu hôm nay",
       value: totalRevenue.toLocaleString("vi-VN") + " ₫",
@@ -153,7 +153,7 @@ const HistoryOrder = () => {
       color: "text-purple-600",
       bg: "bg-purple-50"
     }
-  ]
+  ], [totalRevenue, bill]);
 
   return (
     <>
