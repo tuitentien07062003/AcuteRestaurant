@@ -56,17 +56,17 @@ app.use(session({
   },
 }));
 
-app.use("/acute/employee", requireLogin, employeesRoutes);
-app.use("/acute/store", requireLogin, storeRoutes);
-app.use("/acute/menu-categories", requireLogin, menuCategoryRoutes);
-app.use("/acute/menu", requireLogin, menuRoutes);
-app.use("/acute/auth", authRoutes);
-app.use("/acute/users", requireLogin, userRoutes);
-app.use("/acute/timesheet", requireLogin, timesheetRoutes);
-app.use("/acute/voucher",  voucherRoutes);
-app.use("/acute/bill-orders", requireLogin, billOrderRoutes);
-app.use("/acute/sales", requireLogin, salesRoutes);
-app.use("/acute/refund", requireLogin, refundRoutes);
+app.use("/employee", requireLogin, employeesRoutes);
+app.use("/store", requireLogin, storeRoutes);
+app.use("/menu-categories", requireLogin, menuCategoryRoutes);
+app.use("/menu", requireLogin, menuRoutes);
+app.use("/auth", authRoutes);
+app.use("/users", requireLogin, userRoutes);
+app.use("/timesheet", requireLogin, timesheetRoutes);
+app.use("/voucher",  voucherRoutes);
+app.use("/bill-orders", requireLogin, billOrderRoutes);
+app.use("/sales", requireLogin, salesRoutes);
+app.use("/refund", requireLogin, refundRoutes);
 
 connectDB().then(() => {
   app.listen(PORT, () => {
