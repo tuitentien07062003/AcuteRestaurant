@@ -12,7 +12,7 @@ export default function KitchenColumn({ title, orders, onReload }) {
           <KitchenCard
             key={order.id}
             order={order}
-            status={title}
+            status={order.status}
             onReload={onReload}
           />
         ))}

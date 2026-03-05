@@ -142,7 +142,7 @@ export const getBillOrderDetails = async (req, res) => {
         });
 
         if (!bill) {
-            return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
+            return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
         }
 
         const details = await DetailOrder.findAll({
@@ -170,24 +170,24 @@ export const updateOrderStatus = async (req, res) => {
         const STATUS = ["Cooking", "Ready"];
 
         if (!STATUS.includes(status)) {
-            return res.status(400).json({ message: "Trạng thái không hợp lệ" });
+            return res.status(400).json({ message: "Trạng thái không hợp lệ" });
         }
 
         const order = await BillOrder.findByPk(id);
 
         if (!order) {
-            return res.statú(404).json({ message: "Không tìm thấy đơn hàng "});
+            return res.status(404).json({ message: "Không tìm thấy đơn hàng " });
         }
 
         if (
             (order.status === "Pending" && status !== "Cooking") ||
             (order.status === "Cooking" && status !== "Ready")
         ) {
-            return res.status(400).json({ message: "Không thể chuyển trạng thái" });
+            return res.status(400).json({ message: "Không thể chuyển trạng thái" });
         }
         await order.update({status});
 
-        return res.status(200).json({ message: "Chuyển trạng thái thành công!"});
+        return res.status(200).json({ message: "Chuyển trạng thái thành công!"});
     } catch (err) {
         console.error(err);
         return res.status(500).json({ message: "Update order status failed"});
@@ -225,3 +225,4 @@ export const completeOrder = async (req, res) => {
     });
   }
 };
+

@@ -40,7 +40,15 @@ export default function Login() {
     try {
       const data = await doLogin(ctx, form);
       const role = data.user.role;
-      if (role === "SM" || role === "SUP" || role === "CREW") navigate("/pos");
+      // SM (Store Manager) or SUP (Supervisor) → Admin Dashboard
+      // CREW → POS
+      if (role === "SM" || role === "SUP") {
+        navigate("/admin");
+      } else if (role === "CREW") {
+        navigate("/pos");
+      } else {
+        navigate("/pos");
+      }
     } catch (err) {
       setServerError(err.message || "Đăng nhập thất bại");
     } finally {

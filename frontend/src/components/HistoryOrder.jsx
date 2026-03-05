@@ -96,9 +96,12 @@ const HistoryOrder = () => {
     return `DoanhThuNgay_${getTodayDate()}.pdf`;
   }
 
-  // Download revenue PDF function
+  // Download revenue PDF function - must be at top level to maintain hook order
   const handleDownloadRevenuePDF = useCallback(async () => {
-    if (bill.length === 0) return;
+    if (bill.length === 0) {
+      alert("Chưa có đơn hàng nào để xuất PDF");
+      return;
+    }
     
     try {
       setDownloading(true);

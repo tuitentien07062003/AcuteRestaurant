@@ -3,6 +3,7 @@ import useInit from "@/hooks/useInit";
 import { fetchBillDetail, updateOrderStatus, completeOrder } from "@/api/billOrders";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 export default function KitchenCard({ order, status, onReload }) {
   const [items, setItems] = useState([]);
@@ -13,28 +14,32 @@ export default function KitchenCard({ order, status, onReload }) {
         const res = await fetchBillDetail(order.id);
         setItems(res.details || res.data?.details || []);
       } catch (e) {
-        console.error(e);
+        console.error("[KitchenCard] Error loading details:", e);
       }
     }
     load();
   }, [order.id]);
 
   const handleNext = async () => {
+    console.log("[KitchenCard] Current status:", status, "Order ID:", order.id);
     try {
       if (status === "Pending") {
+        console.log("[KitchenCard] Updating to Cooking...");
         await updateOrderStatus(order.id, "Cooking");
-      }
-
-      if (status === "Cooking") {
+        toast.success("Đơn hàng đang được nấu");
+      } else if (status === "Cooking") {
+        console.log("[KitchenCard] Updating to Ready...");
         await updateOrderStatus(order.id, "Ready");
-      }
-
-      if (status === "Ready") {
+        toast.success("Món đã sẵn sàng");
+      } else if (status === "Ready") {
+        console.log("[KitchenCard] Completing order...");
         await completeOrder(order.id);
+        toast.success("Đơn hàng đã hoàn tất");
       }
       onReload();
     } catch (e) {
-      console.error(e);
+      console.error("[KitchenCard] Error updating status:", e);
+      toast.error(e.response?.data?.message || "Cập nhật trạng thái thất bại");
     }
   };
 
@@ -57,7 +62,7 @@ export default function KitchenCard({ order, status, onReload }) {
       <ul className="text-sm space-y-1">
         {items.map(i => (
           <li key={i.id} className="flex justify-between">
-            <span>{i.menu_item.name}</span>
+            <span>{i.menu_item?.name || 'Unknown'}</span>
             <span>x{i.quantity}</span>
           </li>
         ))}
