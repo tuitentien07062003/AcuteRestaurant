@@ -8,7 +8,11 @@ import { Op } from "sequelize";
 export const createBillOrder = async (req, res) => {
   const t = await sequelize.transaction();
   try {
-    const employee_id = req.session.user.employee_id;
+    const employee_id = req.user?.employee_id || req.session?.user?.employee_id;
+
+    if (!employee_id) {
+      return res.status(401).json({ message: "Chưa đăng nhập" });
+    }
 
     const {
       store_id,
