@@ -51,8 +51,8 @@ app.use(session({
   saveUninitialized: true,
   cookie: {
     httpOnly: true,
-    secure: true, // Required for sameSite: "none" (cross-origin)
-    sameSite: "none", // Cho phép gửi cookie cross-origin
+    secure: isProduction, // Only secure in production
+    sameSite: isProduction ? "none" : "lax", // none for cross-origin in prod, lax for dev
     maxAge: 1000 * 60 * 60 * 8, // 8 hours
   },
 }));

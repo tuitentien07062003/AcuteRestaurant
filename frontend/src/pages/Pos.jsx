@@ -1,4 +1,5 @@
-import { useState, useContext } from 'react'
+import { useState, useContext, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import PosHeader from '@/components/PosHeader'
 import LeftSidebar from '@/components/LeftSidebar'
 import Order from '@/components/Order'
@@ -11,7 +12,29 @@ import { GlobalContext } from '@/context/GlobalContext'
 
 const Pos = () => {
   const ctx = useContext(GlobalContext);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (ctx.user === null) {
+      // Wait a bit for auth check
+      const timer = setTimeout(() => {
+        if (!ctx.user) {
+          navigate('/login');
+        }
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [ctx.user, navigate]);
+
   useInit(() => initPos(ctx), []);
+
+  const [orderItems, setOrderItems] = useState([]);
+  const { activeCategory } = ctx;
+  const [activeComponent, setActiveComponent] = useState('menu');
+
+  if (!ctx.user) {
+    return <div>Loading...</div>; // Or a spinner
+  }
   const [orderItems, setOrderItems] = useState([]);
   const { activeCategory } = ctx;
   const [activeComponent, setActiveComponent] = useState('menu');

@@ -1,4 +1,5 @@
-import { createContext, useState, useMemo } from "react";
+import { createContext, useState, useMemo, useEffect } from "react";
+import { getUser } from "@/api/auth";
 
 export const GlobalContext = createContext(null);
 
@@ -11,6 +12,20 @@ export function GlobalProvider({ children }) {
   const [foods, setFoods] = useState([]);
   const [vouchers, setVouchers] = useState([]);
   const [timesheets, setTimesheets] = useState([]);
+
+  useEffect(() => {
+    // Check if user is logged in on app load
+    const checkAuth = async () => {
+      try {
+        const userData = await getUser();
+        setUser(userData.user);
+      } catch (e) {
+        // Not logged in, stay null
+        console.log("Not logged in");
+      }
+    };
+    checkAuth();
+  }, []);
 
   const value = useMemo(() => ({
     user,
