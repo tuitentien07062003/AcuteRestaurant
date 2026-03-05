@@ -32,8 +32,9 @@ const isProduction = process.env.NODE_ENV === "production" || process.env.RENDER
 
 app.use(cors({
   origin: function(origin, callback) {
+    // Cho phép không có origin hoặc các origin trong danh sách
     if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
+      callback(null, origin || allowedOrigins[2]); // Pass origin explicitly
     } else {
       callback(new Error("Not allowed by CORS"));
     }
@@ -50,23 +51,23 @@ app.use(session({
   saveUninitialized: true,
   cookie: {
     httpOnly: true,
-    secure: isProduction,
-    sameSite: "lax",
+    secure: true, // Required for sameSite: "none" (cross-origin)
+    sameSite: "none", // Cho phép gửi cookie cross-origin
     maxAge: 1000 * 60 * 60 * 8, // 8 hours
   },
 }));
 
-app.use("/employee", requireLogin, employeesRoutes);
-app.use("/store", requireLogin, storeRoutes);
-app.use("/menu-categories", requireLogin, menuCategoryRoutes);
-app.use("/menu", requireLogin, menuRoutes);
-app.use("/auth", authRoutes);
-app.use("/users", requireLogin, userRoutes);
-app.use("/timesheet", requireLogin, timesheetRoutes);
-app.use("/voucher",  voucherRoutes);
-app.use("/bill-orders", requireLogin, billOrderRoutes);
-app.use("/sales", requireLogin, salesRoutes);
-app.use("/refund", requireLogin, refundRoutes);
+app.use("/acute/employee", requireLogin, employeesRoutes);
+app.use("/acute/store", requireLogin, storeRoutes);
+app.use("/acute/menu-categories", requireLogin, menuCategoryRoutes);
+app.use("/acute/menu", requireLogin, menuRoutes);
+app.use("/acute/auth", authRoutes);
+app.use("/acute/users", requireLogin, userRoutes);
+app.use("/acute/timesheet", requireLogin, timesheetRoutes);
+app.use("/acute/voucher",  voucherRoutes);
+app.use("/acute/bill-orders", requireLogin, billOrderRoutes);
+app.use("/acute/sales", requireLogin, salesRoutes);
+app.use("/acute/refund", requireLogin, refundRoutes);
 
 connectDB().then(() => {
   app.listen(PORT, () => {
