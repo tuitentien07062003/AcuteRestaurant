@@ -15,10 +15,13 @@ const Pos = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log("[Pos] user:", ctx.user);
     if (ctx.user === null) {
       // Wait a bit for auth check
       const timer = setTimeout(() => {
+        console.log("[Pos] after timeout, user:", ctx.user);
         if (!ctx.user) {
+          console.log("[Pos] redirecting to login");
           navigate('/login');
         }
       }, 1000);
@@ -35,9 +38,6 @@ const Pos = () => {
   if (!ctx.user) {
     return <div>Loading...</div>; // Or a spinner
   }
-  const [orderItems, setOrderItems] = useState([]);
-  const { activeCategory } = ctx;
-  const [activeComponent, setActiveComponent] = useState('menu');
 
   const handleToOrder = (item) => {
     setOrderItems(prev => {

@@ -1,20 +1,24 @@
 import axios from "axios";
 
 const axiosClient = axios.create({
-  baseURL: "/acute",
+  baseURL: "https://acuterestaurant.onrender.com/acute",
   withCredentials: true,
 });
 
 // Log requests
 axiosClient.interceptors.request.use(config => {
-  console.log(`[API] ${config.method.toUpperCase()} ${config.url}`);
+  console.log(`[API REQUEST] ${config.method.toUpperCase()} ${config.url}`);
   return config;
 });
 
 // Handle 401
 axiosClient.interceptors.response.use(
-  res => res,
+  res => {
+    console.log(`[API RESPONSE] ${res.status} ${res.config.url}`);
+    return res;
+  },
   err => {
+    console.log(`[API ERROR] ${err.response?.status} ${err.config.url}`, err.response?.data);
     if (err.response?.status === 401) {
       console.warn("[API] 401 Unauthorized", err.config.url);
       window.location.href = "/login";

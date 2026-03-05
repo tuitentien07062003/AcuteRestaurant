@@ -2,6 +2,8 @@ import bcrypt from 'bcrypt';
 import { User } from '../models/User.js';
 import { Employee } from '../models/Employee.js';
 
+const isProduction = process.env.NODE_ENV === "production" || process.env.RENDER;
+
 export const login = async (req, res) => {
     try {
         const { username, password } = req.body;
@@ -55,7 +57,8 @@ export const logout = (req, res) => {
     res.clearCookie("pos.sid",
         {
             httpOnly: true,
-            sameSite: "lax",
+            sameSite: isProduction ? "none" : "lax",
+            secure: isProduction,
         }
     );
     res.status(200).json({ message: "Đã đăng xuất" });

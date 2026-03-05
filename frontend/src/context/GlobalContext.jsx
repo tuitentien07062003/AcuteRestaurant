@@ -17,11 +17,13 @@ export function GlobalProvider({ children }) {
     // Check if user is logged in on app load
     const checkAuth = async () => {
       try {
+        console.log("[GlobalProvider] Checking auth...");
         const userData = await getUser();
+        console.log("[GlobalProvider] User data:", userData);
         setUser(userData.user);
       } catch (e) {
+        console.log("[GlobalProvider] Auth check failed:", e);
         // Not logged in, stay null
-        console.log("Not logged in");
       }
     };
     checkAuth();
