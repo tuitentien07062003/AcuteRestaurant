@@ -42,7 +42,7 @@ const paymentMethod = {
 
 const HistoryOrder = () => {
   const ctx = useContext(GlobalContext);
-  const [loading, setLoading] = useState(ctx.bills.length === 0)
+  const [loading, setLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
   const [openDetail, setOpenDetail] = useState(false)
   const [selectedBillId, setSelectedBillId] = useState(null)  
