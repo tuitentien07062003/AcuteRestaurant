@@ -28,6 +28,8 @@ const allowedOrigins = [
   "https://acute-restaurant.vercel.app"
 ];
 
+const isProduction = process.env.NODE_ENV === "production" || process.env.RENDER;
+
 app.use(cors({
   origin: function(origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
@@ -48,8 +50,8 @@ app.use(session({
   saveUninitialized: true,
   cookie: {
     httpOnly: true,
-    secure: false, // localhost không dùng https
-    sameSite: "lax", // allow cookies cho requests
+    secure: isProduction,
+    sameSite: "lax",
     maxAge: 1000 * 60 * 60 * 8, // 8 hours
   },
 }));

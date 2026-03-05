@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const axiosClient = axios.create({
-  baseURL: "https://acuterestaurant.onrender.com",
+  baseURL: "https://acuterestaurant.onrender.com/acute",
   withCredentials: true,
 });
 
