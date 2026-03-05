@@ -1,4 +1,4 @@
-import { useState, useContext, useCallback, useMemo } from "react"
+import { useState, useContext, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import OrderDetailDialog from "./BillDetailDialog.jsx"
 import useInit from "@/hooks/useInit"
@@ -96,8 +96,8 @@ const HistoryOrder = () => {
     return `DoanhThuNgay_${getTodayDate()}.pdf`;
   }
 
-  // Download revenue PDF function - must be at top level to maintain hook order
-  const handleDownloadRevenuePDF = useCallback(async () => {
+  // Download revenue PDF function
+  const handleDownloadRevenuePDF = async () => {
     if (bill.length === 0) {
       alert("Chưa có đơn hàng nào để xuất PDF");
       return;
@@ -128,7 +128,7 @@ const HistoryOrder = () => {
     } finally {
       setDownloading(false);
     }
-  }, [bill]);
+  }
 
   // Stats cards data
   const stats = useMemo(() => [
