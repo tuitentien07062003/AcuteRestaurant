@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const axiosClient = axios.create({
-  baseURL: "/acute",
+  baseURL: import.meta.env.DEV ? "http://localhost:3000/acute" : "https://acuterestaurant.onrender.com/acute",
   withCredentials: true,
 });
 
