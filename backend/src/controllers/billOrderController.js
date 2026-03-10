@@ -111,6 +111,8 @@ export const getBillOrders = async (req, res) => {
         const start = new Date(today.setHours(0, 0, 0, 0));
         const end = new Date(today.setHours(23, 59, 59, 999));
 
+        //if cơ trong chache (return luôn) else fetch từ db rồi lưu vào cache rồi return
+
         const bills = await BillOrder.findAll({
             where: {
                 created_at: {
@@ -121,6 +123,9 @@ export const getBillOrders = async (req, res) => {
                 ["created_at", "DESC"]
             ],
         });
+
+        // Luu vào cache với TTL 60 phút
+
         res.status(200).json(bills);
     } catch (err) {
         console.error(err);
