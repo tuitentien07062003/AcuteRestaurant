@@ -164,12 +164,12 @@ export default function Order({ items, setItems }) {
             <SelectContent>
               <SelectItem value="Cash">
                 <div className="flex items-center gap-2">
-                  <span>💵</span> Cash
+                  Cash
                 </div>
               </SelectItem>
               <SelectItem value="Momo">
                 <div className="flex items-center gap-2">
-                  <span>📱</span> Momo
+                  Momo
                 </div>
               </SelectItem>
             </SelectContent>
