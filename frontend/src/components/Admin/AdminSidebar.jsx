@@ -1,6 +1,5 @@
-
 import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 import { 
   LayoutDashboard, 
   DollarSign, 
@@ -14,21 +13,32 @@ import {
 } from "lucide-react"
 
 const menuItems = [
-  { id: 'dashboard', icon: LayoutDashboard, label: 'Tổng quan' },
-  { id: 'revenue', icon: DollarSign, label: 'Doanh thu' },
-  { id: 'inventory', icon: Package, label: 'Kiểm kho' },
-  { id: 'salary', icon: CreditCard, label: 'Tính lương' },
-  { id: 'employees', icon: Users, label: 'Nhân viên' },
-  { id: 'documents', icon: FileText, label: 'Hồ sơ' },
-  { id: 'payment', icon: CreditCard, label: 'Phiếu thanh toán' },
+  { id: 'dashboard', icon: LayoutDashboard, label: 'Tổng quan', path: '/admin' },
+  { id: 'revenue', icon: DollarSign, label: 'Doanh thu', path: '/admin/doanhthu' },
+  { id: 'inventory', icon: Package, label: 'Kiểm kho', path: '/admin/kiemkho' },
+  { id: 'salary', icon: CreditCard, label: 'Tính lương', path: '/admin/tinhluong' },
+  { id: 'employees', icon: Users, label: 'Nhân viên', path: '/admin/nhanvien' },
+  { id: 'documents', icon: FileText, label: 'Hồ sơ', path: '/admin/hoso' },
+  { id: 'payment', icon: CreditCard, label: 'Phiếu thanh toán', path: '/admin/phie_thanhtoan' },
 ]
 
 const AdminSidebar = ({ activeMenu, onSelect }) => {
   const navigate = useNavigate()
+  const { tab } = useParams()
   const [hoveredItem, setHoveredItem] = useState(null)
+
+  // Get current active tab from URL
+  const currentTab = tab || 'dashboard'
 
   const handleLogout = () => {
     navigate("/login")
+  }
+
+  const handleClick = (item) => {
+    if (onSelect) {
+      onSelect(item.id)
+    }
+    navigate(item.path)
   }
 
   return (
@@ -50,12 +60,12 @@ const AdminSidebar = ({ activeMenu, onSelect }) => {
       <div className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
         {menuItems.map((item) => {
           const Icon = item.icon
-          const isActive = activeMenu === item.id
+          const isActive = currentTab === item.id || (item.id === 'dashboard' && !tab)
           
           return (
             <button
               key={item.id}
-              onClick={() => onSelect(item.id)}
+              onClick={() => handleClick(item)}
               onMouseEnter={() => setHoveredItem(item.id)}
               onMouseLeave={() => setHoveredItem(null)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${

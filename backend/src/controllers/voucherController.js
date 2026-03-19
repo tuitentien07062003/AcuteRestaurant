@@ -1,12 +1,23 @@
 import { Voucher } from "../models/Voucher.js";
+import voucherCacheService from "../services/voucherCacheService.js";
 
 export const getAllVouchers = async (req, res) => {
     try {
+        // Try to get from cache first
+        const cachedData = await voucherCacheService.get();
+        if (cachedData) {
+            return res.status(200).json(cachedData);
+        }
+
         const vouchers = await Voucher.findAll();
+
+        // Store in cache
+        await voucherCacheService.set(vouchers);
+
         res.status(200).json(vouchers);
     }
     catch (error) {
-        console.error("Lỗi lấy voucher:", error);
+        console.error("Lỗi lấy voucher:", error);
         res.status(500).json({ message: 'GetAll Error', error: error.message });
     }
 };
@@ -19,7 +30,7 @@ export const getVoucherById = async (req, res) => {
             : res.status(200).json(voucher);
     }
     catch (error) {
-        console.error("Lỗi lấy voucher:", error);
+        console.error("Lỗi lấy voucher:", error);
         res.status(500).json({ message: 'GetById Error', error: error.message });
     }
 };
@@ -33,7 +44,7 @@ export const getVoucherByCode = async (req, res) => {
             : res.status(200).json(voucher);
     }
     catch (error) {
-        console.error("Lỗi lấy voucher:", error);
+        console.error("Lỗi lấy voucher:", error);
         res.status(500).json({ message: 'GetBySearch Error', error: error.message });
     }
 };
@@ -43,10 +54,14 @@ export const createVoucher = async (req, res) => {
         const { code, discount_value, discount_percent, start_date, end_date } = req.body;
         const voucher = new Voucher({ code, discount_value, discount_percent, start_date, end_date });
         const savedVoucher = await voucher.save();
+
+        // Invalidate cache
+        await voucherCacheService.invalidate();
+
         res.status(201).json({ message: 'Voucher đã được thêm!' });
     }
     catch (error) {
-        console.error("Lỗi khi thêm voucher:", error);
+        console.error("Lỗi khi thêm voucher:", error);
         res.status(500).json({ message: 'Create Error', error: error.message });
     }
 };
@@ -69,6 +84,10 @@ export const updateVoucher = async (req, res) => {
         if(updatedVoucher === 0) {
             return res.status(404).json({ message: "Không tìm thấy voucher"});
         }
+
+        // Invalidate cache
+        await voucherCacheService.invalidate();
+
         res.status(200).json({ message: "Thông tin voucher đã được cập nhật!" });
     }
     catch (error) {
@@ -88,7 +107,11 @@ export const activeVoucher = async (req, res) => {
         if(activedVoucher === 0) {
             return res.status(404).json({ message: "Không tìm thấy voucher"});
         }
-        return res.status(200).json({ message: "Đã cập nhật trạng thái voucher: " + (active ? "Kích hoạt" : "Vô hiệu hóa") });
+
+        // Invalidate cache
+        await voucherCacheService.invalidate();
+
+        return res.status(200).json({ message: "Đã cập nhật trạng thái voucher: " + (active ? "Kích hoạt" : "Vô hiệu hóa") });
     }
     catch (error) {
         console.error("Lỗi khi cập nhật voucher: ", error);
@@ -106,6 +129,10 @@ export const updateDateVoucher = async (req, res) => {
         if(dateVoucher === 0) {
             return res.status(404).json({ message: "Không tìm thấy voucher"});
         }
+
+        // Invalidate cache
+        await voucherCacheService.invalidate();
+
         res.status(200).json({ message: "Ngày voucher đã được cập nhật!" });
     }
     catch (error) {
@@ -120,6 +147,10 @@ export const deleteVoucher = async (req, res) => {
         if(deletedVoucher === 0) {
             return res.status(404).json({ message: "Không tìm thấy voucher"});
         }
+
+        // Invalidate cache
+        await voucherCacheService.invalidate();
+
         res.status(200).json({ message: "Voucher đã được xóa!" });
     }
     catch (error) {

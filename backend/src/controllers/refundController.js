@@ -13,11 +13,11 @@ export const refundOrder = async (req, res) => {
         const bill = await BillOrder.findByPk(id, { transaction: t });
 
         if (!bill) {
-            return res.status(404).json({ message: "Không tìm thấy đơn"});
+            return res.status(404).json({ message: "Không tìm thấy đơn"});
         }
 
         if (bill.status !== "Completed") {
-            return res.status(400).json({ message: "Chỉ được refund đơn đã hoàn thành"});
+            return res.status(400).json({ message: "Chỉ được refund đơn đã hoàn thành"});
         }
 
         await Refund.create({
@@ -30,7 +30,7 @@ export const refundOrder = async (req, res) => {
         await bill.update({ status: "Refund" }, { transaction: t});
         await t.commit();
 
-        return res.json({ message: "Đã refund đơn hàng"});
+        return res.json({ message: "Đã refund đơn hàng"});
     } catch (err) {
         await t.rollback();
         console.error(err);

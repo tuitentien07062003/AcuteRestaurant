@@ -17,6 +17,7 @@ export const getTimesheets = async (req, res) => {
             ],
             order: [['work_day', 'DESC'], ['check_in', 'DESC']]
         });
+
         res.status(200).json(timesheets);
     } catch (err) {
         console.error(err);
@@ -31,7 +32,7 @@ export const checkInOut = async (req, res) => {
         const employee =  await Employee.findOne({where:{internal_id}});
 
         if(!employee){
-            return res.status(404).json({message:"Nhân viên không tồn tại"});
+            return res.status(404).json({message:"Nhân viên không tồn tại"});
         }
 
         const yesterday = new Date();
@@ -88,7 +89,7 @@ export const checkInOut = async (req, res) => {
                 check_out: null,
             });
 
-            return res.status(200).json({message:"Check-in thành công", type:"CHECK_IN", time: todayShift.check_in});
+            return res.status(200).json({message:"Check-in thành công", type:"CHECK_IN", time: todayShift.check_in});
         }
 
         // Check-out
@@ -100,10 +101,11 @@ export const checkInOut = async (req, res) => {
                 check_out: checkOut,
                 total_hours: totalHours
             });
-        return res.status(200).json({message:"Check-out thành công", type:"CHECK_OUT", total_hours: totalHours});
+
+            return res.status(200).json({message:"Check-out thành công", type:"CHECK_OUT", total_hours: totalHours});
         }
 
-        return res.status(400).json({message:"Ca làm việc hôm nay đã hoàn tất"});
+        return res.status(400).json({message:"Ca làm việc hôm nay đã hoàn tất"});
         
     } catch (err) {
         console.error(err);

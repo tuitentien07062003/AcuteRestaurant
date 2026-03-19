@@ -1,8 +1,8 @@
 import axios from "axios";
 
 const axiosClient = axios.create({
-  // baseURL: "https://acuterestaurant.onrender.com/acute",
-  baseURL: "http://localhost:3000/acute",
+  baseURL: "https://acuterestaurant.onrender.com/acute",
+  // baseURL: "http://localhost:3000/acute",
   withCredentials: false, // Không cần credentials cho JWT
 });
 

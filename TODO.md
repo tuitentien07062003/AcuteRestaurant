@@ -1,20 +1,16 @@
-# TODO List - COMPLETED
+# TODO: Refactor Admin Module (1+2)
 
-## Fix Issues
+**Approved Plan:**
+- Tách EmployeesDashboard thành 4 sub-components
+- Tạo AdminContext + adminInit + useAdmin
 
-### 1. ✅ Fixed HistoryOrder.jsx - Rules of Hooks Error
-- Moved `useCallback` to the top level of the component so it's always called
-- Added alert message when there are no bills: "Chưa có đơn hàng nào để xuất PDF"
-
-### 2. ✅ Fixed Kitchen Status Update Not Working
-**Root cause found:** In KitchenColumn.jsx, the `status` prop was being passed as `title` (e.g., "Chờ xử lý") instead of `order.status` (e.g., "Pending"). This caused the status comparison in KitchenCard to always fail.
-
-**Fixes applied:**
-- Fixed KitchenColumn.jsx: Changed `status={title}` to `status={order.status}`
-- Fixed typo in backend controller: `res.statú(404)` → `res.status(404)`
-- Added better error handling in KitchenCard with toast notifications
-
-### 3. Refund functionality
-- The refund 404 error may be related to order ID format mismatch between frontend and backend
-- The backend expects UUID for bill ID but the frontend might be passing order_id (e.g., "EC248-260305-003")
+**Steps:**
+- [x] Step 1: Tạo `frontend/src/context/AdminContext.jsx` ✓
+- [x] Step 2: Tạo `frontend/src/init/adminInit.js` ✓
+- [x] Step 3: Tạo `frontend/src/hooks/useAdmin.js` ✓
+- [x] Step 4: Tách `EmployeesTable.jsx`, `EmployeesStats.jsx`, 3 dialogs ✓
+- [x] Step 5: Refactor `EmployeesDashboard.jsx` → giờ gọn ~30 dòng, clean container ✓
+- [x] Step 6: EmployeesDashboard hoàn chỉnh (no duplicate sidebar) ✓
+- [ ] Step 7: Update AdminDashboard.jsx to integrate EmployeesDashboard tab
+- [ ] Step 8: Final test & complete
 

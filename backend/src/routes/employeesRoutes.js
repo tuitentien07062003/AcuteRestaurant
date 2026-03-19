@@ -7,7 +7,8 @@ import {
     updateEmployee, 
     activeEmployee,
     getEmployeeBySeacrh,
-    salaryEmployee
+    salaryEmployee,
+    deleteEmployee
 } from '../controllers/employeeController.js';
 
 const routes = express.Router();
@@ -19,5 +20,6 @@ routes.post('/', validateEmployee, createEmployee);
 routes.put('/:id', validateEmployeeUpdate, updateEmployee);
 routes.patch('/active/:id', activeEmployee);
 routes.patch('/salary/:id', salaryEmployee);
+routes.delete('/:id', deleteEmployee);
 
-export default routes; 
+export default routes;

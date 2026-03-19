@@ -1,5 +1,5 @@
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useParams, useNavigate } from "react-router-dom"
 import AdminSidebar from "./AdminSidebar"
 import RevenueDashboard from "./RevenueDashboard"
 import InventoryDashboard from "./InventoryDashboard"
@@ -130,8 +130,46 @@ const DashboardOverview = () => {
   )
 }
 
+// Map Vietnamese paths to component IDs
+const pathToComponentMap = {
+  'doanhthu': 'revenue',
+  'kiemkho': 'inventory',
+  'tinhluong': 'salary',
+  'nhanvien': 'employees',
+  'hoso': 'documents',
+  'phie_thanhtoan': 'payment',
+}
+
 const Admin = () => {
+  const { tab } = useParams()
+  const navigate = useNavigate()
   const [activeComponent, setActiveComponent] = useState("dashboard")
+
+  // Update active component based on URL
+  useEffect(() => {
+    if (!tab) {
+      setActiveComponent("dashboard")
+    } else if (pathToComponentMap[tab]) {
+      setActiveComponent(pathToComponentMap[tab])
+    } else {
+      setActiveComponent("dashboard")
+    }
+  }, [tab])
+
+  const handleSelect = (componentId) => {
+    setActiveComponent(componentId)
+    // Map component ID back to Vietnamese path
+    const pathMap = {
+      'dashboard': '/admin',
+      'revenue': '/admin/doanhthu',
+      'inventory': '/admin/kiemkho',
+      'salary': '/admin/tinhluong',
+      'employees': '/admin/nhanvien',
+      'documents': '/admin/hoso',
+      'payment': '/admin/phie_thanhtoan',
+    }
+    navigate(pathMap[componentId] || '/admin')
+  }
 
   const renderComponent = () => {
     switch (activeComponent) {
@@ -159,7 +197,7 @@ const Admin = () => {
       {/* Left Sidebar */}
       <AdminSidebar 
         activeMenu={activeComponent} 
-        onSelect={setActiveComponent} 
+        onSelect={handleSelect} 
       />
       
       {/* Main Content */}
