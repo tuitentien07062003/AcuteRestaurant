@@ -11,6 +11,10 @@ import voucherRoutes from './routes/voucherRoutes.js';
 import billOrderRoutes from './routes/billOrderRoutes.js';
 import salesRoutes from './routes/salesRoutes.js'
 import refundRoutes from './routes/refundRoutes.js'
+import invoiceRoutes from './routes/invoiceRoutes.js';
+import inventoryRoutes from './routes/inventoryRoutes.js';
+import payrollRoutes from './routes/payrollRoutes.js';
+import paymentRequestRoutes from './routes/paymentRequestRoutes.js';
 import { connectDB } from './config/db.js';
 import path from 'path';
 import cors from 'cors';
@@ -55,6 +59,10 @@ app.use("/acute/voucher",  voucherRoutes);
 app.use("/acute/bill-orders", requireLogin, billOrderRoutes);
 app.use("/acute/sales", requireLogin, salesRoutes);
 app.use("/acute/refund", requireLogin, refundRoutes);
+app.use("/acute/invoices", requireLogin, invoiceRoutes);
+app.use("/acute/inventory", requireLogin, inventoryRoutes);
+app.use("/acute/payroll", requireLogin, payrollRoutes);
+app.use("/acute/payment-requests", requireLogin, paymentRequestRoutes);
 
 connectDB().then(() => {
   app.listen(PORT, () => {

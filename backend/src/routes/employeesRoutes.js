@@ -13,7 +13,7 @@ import {
 
 const routes = express.Router();
 
-routes.get('/', getAllEmployees);
+routes.get/('', getAllEmployees);
 routes.get('/search', getEmployeeBySeacrh);
 routes.get('/:id', getEmployeeById);
 routes.post('/', validateEmployee, createEmployee);
