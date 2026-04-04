@@ -1,5 +1,6 @@
 import { Inventory } from "../models/Inventory.js";
 import { Op } from "sequelize";
+import inventoryCacheService from "../services/inventoryCacheService.js";
 
 export const getAllInventories = async (req, res) => {
   try {
@@ -9,10 +10,16 @@ export const getAllInventories = async (req, res) => {
     if (category) whereClause.category = category;
     if (name) whereClause.name = { [Op.iLike]: `%${name}%` };
 
-    const inventories = await Inventory.findAll({
-      where: whereClause,
-      order: [['created_at', 'DESC']]
-    });
+    const cacheKey = `inventory:${category || 'all'}:${name || 'all'}`;
+    let inventories = await inventoryCacheService.get(cacheKey);
+
+    if (!inventories) {
+      inventories = await Inventory.findAll({
+        where: whereClause,
+        order: [['created_at', 'DESC']]
+      });
+      await inventoryCacheService.set(cacheKey, inventories);
+    }
 
     res.json(inventories);
   } catch (error) {
@@ -48,6 +55,9 @@ export const createInventory = async (req, res) => {
       min_stock: min_stock || 0
     });
 
+    // Invalidate cache
+    await inventoryCacheService.invalidate();
+
     res.status(201).json({ message: 'Vật tư đã được thêm!', inventory });
   } catch (error) {
     console.error("Lỗi tạo vật tư:", error);
@@ -64,6 +74,7 @@ export const updateInventory = async (req, res) => {
     if (updated === 0) {
       return res.status(404).json({ message: "Không tìm thấy vật tư" });
     }
+    await inventoryCacheService.invalidate();
     res.json({ message: "Vật tư đã được cập nhật!" });
   } catch (error) {
     console.error("Lỗi cập nhật vật tư:", error);
@@ -77,10 +88,10 @@ export const deleteInventory = async (req, res) => {
     if (deleted === 0) {
       return res.status(404).json({ message: "Không tìm thấy vật tư" });
     }
+    await inventoryCacheService.invalidate();
     res.json({ message: "Vật tư đã được xóa!" });
   } catch (error) {
     console.error("Lỗi xóa vật tư:", error);
     res.status(500).json({ message: 'Delete Inventory Error', error: error.message });
   }
 };
-

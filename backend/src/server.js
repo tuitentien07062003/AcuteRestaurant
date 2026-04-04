@@ -15,6 +15,7 @@ import invoiceRoutes from './routes/invoiceRoutes.js';
 import inventoryRoutes from './routes/inventoryRoutes.js';
 import payrollRoutes from './routes/payrollRoutes.js';
 import paymentRequestRoutes from './routes/paymentRequestRoutes.js';
+import stockRoutes from './routes/stockRoutes.js';
 import { connectDB } from './config/db.js';
 import path from 'path';
 import cors from 'cors';
@@ -63,6 +64,7 @@ app.use("/acute/invoices", requireLogin, invoiceRoutes);
 app.use("/acute/inventory", requireLogin, inventoryRoutes);
 app.use("/acute/payroll", requireLogin, payrollRoutes);
 app.use("/acute/payment-requests", requireLogin, paymentRequestRoutes);
+app.use("/acute/stock", requireLogin, stockRoutes);
 
 connectDB().then(() => {
   app.listen(PORT, () => {

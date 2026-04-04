@@ -44,3 +44,25 @@ export const Stock = sequelize.define(
     timestamps: false,
   }
 );
+
+// ==========================================
+// THIẾT LẬP MỐI QUAN HỆ (ASSOCIATIONS)
+// Bắt buộc phải có để dùng được cú pháp 'include' trong Service/Controller
+// ==========================================
+
+// 1. Nối với Employee để lấy tên người cập nhật (Fix lỗi 500)
+Stock.belongsTo(Employee, {
+  foreignKey: "updated_by",
+  as: "updatedBy", // Tên này phải khớp chính xác với alias bạn gọi trong phần include của stockService
+});
+
+// 2. Nối với Inventory để lấy thông tin Tên, Đơn vị của vật tư (Cần cho Frontend)
+Stock.belongsTo(Inventory, {
+  foreignKey: "item_id",
+  // Không đặt 'as' thì Sequelize mặc định sẽ dùng tên Model là 'Inventory' (khớp với code frontend của bạn)
+});
+
+// 3. Nối với Store (Dự phòng cho các query sau này)
+Stock.belongsTo(Store, {
+  foreignKey: "store_id",
+});

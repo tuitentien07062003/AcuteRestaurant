@@ -4,6 +4,8 @@ import { BillOrder } from "../models/BillOrder.js";
 import { Store } from "../models/Store.js";
 import { MenuItem } from "../models/MenuItem.js";
 import { Op } from "sequelize";
+import invoiceCacheService from "../services/invoiceCacheService.js";
+import Joi from 'joi';
 
 export const getAllInvoices = async (req, res) => {
   try {
@@ -17,15 +19,21 @@ export const getAllInvoices = async (req, res) => {
       if (end_date) whereClause.invoice_date[Op.lte] = end_date;
     }
 
-    const invoices = await Invoice.findAll({
-      where: whereClause,
-      include: [
-        { model: Store, as: "store", attributes: ["id", "name"] },
-        { model: BillOrder, as: "bill", attributes: ["id", "bill_code"] },
-        { model: InvoiceDetail, as: "details" }
-      ],
-      order: [['created_at', 'DESC']]
-    });
+    const cacheKey = `invoices:${store_id || 'all'}:${start_date || 'all'}:${end_date || 'all'}`;
+    let invoices = await invoiceCacheService.get(store_id || 'all');
+
+    if (!invoices) {
+      invoices = await Invoice.findAll({
+        where: whereClause,
+        include: [
+          { model: Store, as: "store", attributes: ["id", "name"] },
+          { model: BillOrder, as: "bill", attributes: ["id", "bill_code"] },
+          { model: InvoiceDetail, as: "details" }
+        ],
+        order: [['created_at', 'DESC']]
+      });
+      await invoiceCacheService.set(store_id || 'all', invoices);
+    }
 
     res.json(invoices);
   } catch (error) {
@@ -88,7 +96,8 @@ export const createInvoice = async (req, res) => {
       subtotal,
       vat_rate: req.body.vat_rate || 8.0,
       vat_amount,
-      total_amount
+      total_amount,
+      status: 'Pending'  // Default status theo yêu cầu
     }, { transaction });
 
     // Create details
@@ -104,6 +113,7 @@ export const createInvoice = async (req, res) => {
     }
 
     await transaction.commit();
+    await invoiceCacheService.invalidateAll();
     res.status(201).json({ message: 'Hóa đơn đã được tạo!', invoice: { id: invoice.id, invoice_number } });
   } catch (error) {
     await transaction.rollback();
@@ -121,10 +131,40 @@ export const updateInvoice = async (req, res) => {
     if (updated[0] === 0) {
       return res.status(404).json({ message: "Không tìm thấy hóa đơn" });
     }
+    await invoiceCacheService.invalidateAll();
     res.json({ message: "Hóa đơn đã được cập nhật!" });
   } catch (error) {
     console.error("Lỗi cập nhật hóa đơn:", error);
     res.status(500).json({ message: 'Update Invoice Error', error: error.message });
+  }
+};
+
+export const updateApprovalStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+    const allowedStatuses = ['Pending', 'Approved', 'Rejected'];
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({ message: 'Status phải là Pending/Approved/Rejected' });
+    }
+
+    const [updated] = await Invoice.update({ 
+      status, 
+      approved_by: req.user.id,
+      approved_at: new Date()
+    }, {
+      where: { id: req.params.id },
+      returning: true
+    });
+
+    if (updated[0] === 0) {
+      return res.status(404).json({ message: "Không tìm thấy hóa đơn" });
+    }
+
+    await invoiceCacheService.invalidateAll();
+    res.json({ message: `Hóa đơn đã được ${status.toLowerCase()}` });
+  } catch (error) {
+    console.error("Lỗi approval hóa đơn:", error);
+    res.status(500).json({ message: 'Update Approval Error', error: error.message });
   }
 };
 
@@ -134,6 +174,7 @@ export const deleteInvoice = async (req, res) => {
     if (deleted === 0) {
       return res.status(404).json({ message: "Không tìm thấy hóa đơn" });
     }
+    await invoiceCacheService.invalidateAll();
     res.json({ message: "Hóa đơn đã được xóa!" });
   } catch (error) {
     console.error("Lỗi xóa hóa đơn:", error);

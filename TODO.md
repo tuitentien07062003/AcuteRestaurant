@@ -1,25 +1,31 @@
-# RestaurantSystem Controller Implementation Plan
+# Bước 2: Backend Services (Logic + Redis Caching) - RestaurantSystem Admin Features ✅ HOÀN THÀNH
 
-## Current Progress
-✅ Plan approved and updated (combined master/detail controllers)
+## 📋 Files đã tạo:
+| Service | Mô tả |
+|---------|-------|
+| `inventoryCacheService.js` | Cache inventory list |
+| `stockCacheService.js` | Cache stock per store |
+| `stockService.js` | **Core**: updateStock auto tạo StockLog + invalidate cache |
+| `invoiceCacheService.js` | Cache invoices per store |
+| `financeCacheService.js` | Shared invalidate payment/payroll caches |
+| `payrollCacheService.js` | Cache payroll per store/month/year |
+| `paymentRequestCacheService.js` | Cache payment requests per store |
 
-## Remaining Steps
-- [✅] 1. Create 4 controller files:
-  - invoiceController.js (Invoice + Detail)
-  - inventoryController.js 
-  - payrollController.js (Payroll + Detail)
-  - paymentRequestController.js (Request + Detail)
-- [✅] 2. Create 4 route files:
-  - invoiceRoutes.js
-  - inventoryRoutes.js
-  - payrollRoutes.js
-  - paymentRequestRoutes.js
-- [✅] 3. Update backend/src/server.js to import and use new routes
-- [ ] 4. Create cache services (invoiceCacheService.js, etc.) + controllers updates
-- [ ] 5. Frontend: Add API files (frontend/src/api/invoices.js, etc.)
-- [ ] 6. Update Admin dashboards (Revenue/Inventory/Salary/Documents/PaymentRequest)
-- [ ] 7. Test endpoints (Postman/curl) + full backend dev server
-- [ ] 8. Optional: Business logic enhancements (auto invoice#, payroll calc from timesheets)
+## ✅ Kiểm tra:
+- Stock update logic: Transaction + Log + Cache invalidate ✅
+- Redis patterns consistent ✅
+- Business logic ready for controllers ✅
 
-Updated after each completed step.
+## 🔄 Test ngay:
+```bash
+redis-cli monitor  # Watch cache logs
+cd backend && npm start  # Restart server
+# Use Postman: PUT /api/stock/:storeId/:itemId {quantity: 10}, check stock_log table + console [STOCK UPDATED]
+```
 
+## ⏳ BƯỚC 3: Controllers & Routes
+- Integrate services vào inventory/invoice/payroll/paymentRequest controllers
+- **NEW** stockController.js + stockRoutes.js
+- Approval workflow (Pending/Approved/Rejected) cho invoice/payroll/payment
+- Joi validation cho tất cả endpoints
+- Export ready cho Bước 4 Frontend API clients

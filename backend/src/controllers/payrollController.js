@@ -3,6 +3,9 @@ import { PayrollDetail } from "../models/PayrollDetail.js";
 import { Employee } from "../models/Employee.js";
 import { Store } from "../models/Store.js";
 import { Op } from "sequelize";
+import payrollCacheService from "../services/payrollCacheService.js";
+import financeCacheService from "../services/financeCacheService.js";
+import Joi from 'joi';
 
 export const getAllPayrolls = async (req, res) => {
   try {
@@ -13,14 +16,20 @@ export const getAllPayrolls = async (req, res) => {
     if (month) whereClause.month = month;
     if (year) whereClause.year = year;
 
-    const payrolls = await Payroll.findAll({
-      where: whereClause,
-      include: [
-        { model: Store, as: "store", attributes: ["id", "name"] },
-        { model: PayrollDetail, as: "details", include: [{ model: Employee, as: "employee", attributes: ["id", "full_name"] }] }
-      ],
-      order: [['year', 'DESC'], ['month', 'DESC']]
-    });
+    let payrolls = await payrollCacheService.get(store_id, month, year);
+
+    if (!payrolls) {
+      payrolls = await Payroll.findAll({
+        where: whereClause,
+        include: [
+          { model: Store, as: "store", attributes: ["id", "name"] },
+          { model: PayrollDetail, as: "details", include: [{ model: Employee, as: "employee", attributes: ["id", "full_name"] }] }
+        ],
+        order: [['year', 'DESC'], ['month', 'DESC']]
+      });
+
+      await payrollCacheService.set(store_id, month, year, payrolls);
+    }
 
     res.json(payrolls);
   } catch (error) {

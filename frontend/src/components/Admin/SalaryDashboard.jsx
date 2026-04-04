@@ -22,6 +22,7 @@ import {
   TableRow 
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import payrollApi from "@/api/payrollApi"
 import { fetchEmployees } from "@/api/employees"
 import { fetchTimesheets } from "@/api/timesheet"
 
@@ -53,29 +54,46 @@ const positionLabels = {
 }
 
 const SalaryDashboard = () => {
+  const [payrolls, setPayrolls] = useState([])
   const [employees, setEmployees] = useState([])
   const [timesheets, setTimesheets] = useState([])
   const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0])
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10))
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1)
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
+  const [storeId] = useState(1) // Mock
 
   useEffect(() => {
+    loadPayrolls()
     loadData()
-  }, [selectedDate])
+  }, [selectedMonth, selectedYear])
+
+  const loadPayrolls = async () => {
+    setLoading(true)
+    try {
+      const params = { store_id: storeId, month: selectedMonth, year: selectedYear }
+      const data = await payrollApi.getAll(params)
+      setPayrolls(data || [])
+    } catch (error) {
+      console.error("Error loading payrolls:", error)
+      setPayrolls([])
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const loadData = async () => {
     setLoading(true)
     try {
       const [empData, timesheetData] = await Promise.all([
-        fetchEmployees().catch(() => mockEmployees),
-        fetchTimesheets().catch(() => mockTimesheets)
+        fetchEmployees().catch(() => []),
+        fetchTimesheets().catch(() => [])
       ])
-      setEmployees(empData || mockEmployees)
-      setTimesheets(timesheetData || mockTimesheets)
+      setEmployees(empData)
+      setTimesheets(timesheetData)
     } catch (error) {
       console.error("Error loading data:", error)
-      setEmployees(mockEmployees)
-      setTimesheets(mockTimesheets)
     } finally {
       setLoading(false)
     }
