@@ -62,19 +62,9 @@ const HistoryOrder = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading)
-    return (
-      <div className="flex flex-col items-center justify-center h-64">
-        <Loader2 className="w-10 h-10 text-[#0077b6] animate-spin mb-3" />
-        <p className="text-[#0077b6] font-medium">Đang tải dữ liệu...</p>
-      </div>
-    )
-
-  const bill = ctx.bills;
-
-  const totalPages = Math.ceil(bill.length / pageSize)
-  const startIndex = (currentPage - 1) * pageSize
-  const currentBills = bill.slice(startIndex, startIndex + pageSize)
+  // --- TẤT CẢ HOOKS (USEMEMO) PHẢI ĐẶT TRƯỚC IF (LOADING) ---
+  // Đảm bảo bill luôn là mảng để không bị lỗi khi ctx.bills chưa có dữ liệu
+  const bill = ctx.bills || [];
 
   const totalRevenue = useMemo(() => bill.reduce((sum, order) => {
     const discount = Number(order.discount_amount || 0);
@@ -86,51 +76,6 @@ const HistoryOrder = () => {
     return sum + netSales
   }, 0), [bill]);
 
-  // Get today's date for filename
-  const getTodayDate = () => {
-    const today = new Date();
-    return today.toISOString().split('T')[0].replace(/-/g, '');
-  }
-
-  const getRevenueFileName = () => {
-    return `DoanhThuNgay_${getTodayDate()}.pdf`;
-  }
-
-  // Download revenue PDF function
-  const handleDownloadRevenuePDF = async () => {
-    if (bill.length === 0) {
-      alert("Chưa có đơn hàng nào để xuất PDF");
-      return;
-    }
-    
-    try {
-      setDownloading(true);
-      
-      // Create the document
-      const doc = createRevenueDocument(bill, "Acute Restaurant", new Date());
-      
-      // Generate PDF blob
-      const blob = await pdf(doc).toBlob();
-      
-      // Create download link
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = getRevenueFileName();
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      
-    } catch (err) {
-      console.error("Error generating PDF:", err);
-      alert("Có lỗi khi tạo PDF. Vui lòng thử lại.");
-    } finally {
-      setDownloading(false);
-    }
-  }
-
-  // Stats cards data
   const stats = useMemo(() => [
     {
       label: "Doanh thu hôm nay",
@@ -154,6 +99,60 @@ const HistoryOrder = () => {
       bg: "bg-purple-50"
     }
   ], [totalRevenue, bill]);
+
+  // Các hàm xử lý sự kiện
+  const getTodayDate = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0].replace(/-/g, '');
+  }
+
+  const getRevenueFileName = () => {
+    return `DoanhThuNgay_${getTodayDate()}.pdf`;
+  }
+
+  const handleDownloadRevenuePDF = async () => {
+    if (bill.length === 0) {
+      alert("Chưa có đơn hàng nào để xuất PDF");
+      return;
+    }
+    
+    try {
+      setDownloading(true);
+      
+      const doc = createRevenueDocument(bill, "Acute Restaurant", new Date());
+      const blob = await pdf(doc).toBlob();
+      
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = getRevenueFileName();
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+    } catch (err) {
+      console.error("Error generating PDF:", err);
+      alert("Có lỗi khi tạo PDF. Vui lòng thử lại.");
+    } finally {
+      setDownloading(false);
+    }
+  }
+
+  // --- EARLY RETURN (IF LOADING) ĐƯỢC CHUYỂN XUỐNG DƯỚI CÙNG ---
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64">
+        <Loader2 className="w-10 h-10 text-[#0077b6] animate-spin mb-3" />
+        <p className="text-[#0077b6] font-medium">Đang tải dữ liệu...</p>
+      </div>
+    )
+  }
+
+  // Tính toán phân trang sau khi đã load xong dữ liệu
+  const totalPages = Math.ceil(bill.length / pageSize)
+  const startIndex = (currentPage - 1) * pageSize
+  const currentBills = bill.slice(startIndex, startIndex + pageSize)
 
   return (
     <>
@@ -320,4 +319,3 @@ const HistoryOrder = () => {
 }
 
 export default HistoryOrder
-
