@@ -11,15 +11,14 @@ export const getAllInventories = async (req, res) => {
     if (name) whereClause.name = { [Op.iLike]: `%${name}%` };
 
     const cacheKey = `inventory:${category || 'all'}:${name || 'all'}`;
-    let inventories = await inventoryCacheService.get(cacheKey);
+    // DISABLED CACHE: let inventories = await inventoryCacheService.get(cacheKey);
 
-    if (!inventories) {
-      inventories = await Inventory.findAll({
-        where: whereClause,
-        order: [['created_at', 'DESC']]
-      });
-      await inventoryCacheService.set(cacheKey, inventories);
-    }
+    const inventories = await Inventory.findAll({
+      where: whereClause,
+      order: [['created_at', 'DESC']],
+      logging: console.log
+    });
+    // DISABLED CACHE: await inventoryCacheService.set(cacheKey, inventories);
 
     res.json(inventories);
   } catch (error) {
@@ -55,8 +54,7 @@ export const createInventory = async (req, res) => {
       min_stock: min_stock || 0
     });
 
-    // Invalidate cache
-    await inventoryCacheService.invalidate();
+    // DISABLED CACHE: await inventoryCacheService.invalidate();
 
     res.status(201).json({ message: 'Vật tư đã được thêm!', inventory });
   } catch (error) {
@@ -74,7 +72,7 @@ export const updateInventory = async (req, res) => {
     if (updated === 0) {
       return res.status(404).json({ message: "Không tìm thấy vật tư" });
     }
-    await inventoryCacheService.invalidate();
+    // DISABLED CACHE: await inventoryCacheService.invalidate();
     res.json({ message: "Vật tư đã được cập nhật!" });
   } catch (error) {
     console.error("Lỗi cập nhật vật tư:", error);
@@ -88,7 +86,7 @@ export const deleteInventory = async (req, res) => {
     if (deleted === 0) {
       return res.status(404).json({ message: "Không tìm thấy vật tư" });
     }
-    await inventoryCacheService.invalidate();
+    // DISABLED CACHE: await inventoryCacheService.invalidate();
     res.json({ message: "Vật tư đã được xóa!" });
   } catch (error) {
     console.error("Lỗi xóa vật tư:", error);

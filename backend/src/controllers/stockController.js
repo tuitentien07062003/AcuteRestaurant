@@ -12,7 +12,10 @@ const updateSchema = Joi.object({
 
 export const getStockByStore = async (req, res) => {
     try {
-        const { storeId } = req.params;
+        const storeId = parseInt(req.params.storeId);
+        if (isNaN(storeId)) {
+            return res.status(400).json({ message: 'Invalid store ID' });
+        }
         const stocks = await stockService.getStock(storeId);
         res.json(stocks || []);
     } catch (error) {
@@ -59,7 +62,10 @@ export const updateStockItem = async (req, res) => {
 
 export const bulkUpdateStock = async (req, res) => {
     try {
-        const { storeId } = req.params;
+        const storeId = parseInt(req.params.storeId);
+        if (isNaN(storeId)) {
+            return res.status(400).json({ message: 'Invalid store ID' });
+        }
         const userId = req.user.id;
         const updates = req.body.updates || []; // [{itemId, quantity, reason}]
 

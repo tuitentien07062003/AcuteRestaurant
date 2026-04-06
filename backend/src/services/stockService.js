@@ -1,6 +1,7 @@
 import { Stock } from '../models/Stock.js';
 import { StockLog } from '../models/StockLog.js';
 import { Employee } from '../models/Employee.js';
+import { Inventory } from '../models/Inventory.js';
 import inventoryCacheService from './inventoryCacheService.js';
 import stockCacheService from './stockCacheService.js';
 import { sequelize } from '../config/db.js';
@@ -18,20 +19,20 @@ class StockService {
      */
     async getStock(storeId) {
         // Try cache first
-        const cached = await stockCacheService.get(storeId);
-        if (cached) return cached;
+       // const cached = await stockCacheService.get(storeId);
+       // if (cached) return cached;
 
         // DB fetch
         const stocks = await Stock.findAll({
             where: { store_id: storeId },
-            include: [
-                { model: Employee, as: 'updatedBy', attributes: ['id', 'full_name'] },
-                { model: Inventory }
-            ]
+            //include: [
+            //    { model: Employee, as: 'updatedBy', attributes: ['id', 'full_name'] },
+            //    { model: Inventory }
+            //]
+            logging: console.log
         });
 
-        // Cache it
-        await stockCacheService.set(storeId, stocks);
+        // DISABLED CACHE: await stockCacheService.set(storeId, stocks);
         return stocks;
     }
 
@@ -91,9 +92,9 @@ class StockService {
                 updated_at: new Date()
             }, { transaction });
 
-            // Invalidate caches
-            await stockCacheService.invalidate(storeId);
-            await inventoryCacheService.invalidate();
+            // DISABLED CACHE:
+            // await stockCacheService.invalidate(storeId);
+            // await inventoryCacheService.invalidate();
 
             await transaction.commit();
             console.log(`[STOCK UPDATED] Store:${storeId}, Item:${itemId}, ${oldQty}→${newQty}, Log:${logId}, By:${userId}`);
@@ -117,6 +118,7 @@ class StockService {
             const result = await this.updateStock(storeId, update.itemId, update.newQuantity, userId);
             results.push(result);
         }
+        // No cache invalidate needed as updateStock already handles it (disabled)
         return { success: results.every(r => r.success), results };
     }
 }

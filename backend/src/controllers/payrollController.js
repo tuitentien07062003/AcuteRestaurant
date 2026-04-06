@@ -22,7 +22,7 @@ export const getAllPayrolls = async (req, res) => {
       payrolls = await Payroll.findAll({
         where: whereClause,
         include: [
-          { model: Store, as: "store", attributes: ["id", "name"] },
+          { model: Store, as: "store", attributes: ["id", "name_store"] },
           { model: PayrollDetail, as: "details", include: [{ model: Employee, as: "employee", attributes: ["id", "full_name"] }] }
         ],
         order: [['year', 'DESC'], ['month', 'DESC']]
