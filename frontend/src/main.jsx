@@ -3,7 +3,8 @@ import { createRoot } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import './index.css'
 import App from './App.jsx'
-import { GlobalProvider } from "./context/GlobalContext";
+import { GlobalProvider } from "./context/GlobalContext"
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 
 // Create a client for React Query
 const queryClient = new QueryClient({
@@ -21,6 +22,7 @@ createRoot(document.getElementById('root')).render(
       <GlobalProvider>
         <App />
       </GlobalProvider>
+      <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   </StrictMode>,
 )
