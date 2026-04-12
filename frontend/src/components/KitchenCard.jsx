@@ -1,45 +1,66 @@
-import { useState } from "react";
-import useInit from "@/hooks/useInit";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchBillDetail, updateOrderStatus, completeOrder } from "@/api/billOrders";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 export default function KitchenCard({ order, status, onReload }) {
-  const [items, setItems] = useState([]);
+  const queryClient = useQueryClient();
 
-  useInit(() => {
-    async function load() {
-      try {
-        const res = await fetchBillDetail(order.id);
-        setItems(res.details || res.data?.details || []);
-      } catch (e) {
-        console.error("[KitchenCard] Error loading details:", e);
+  // Fetch bill details
+  const { data: billDetail, isLoading } = useQuery({
+    queryKey: ['billDetail', order.id],
+    queryFn: () => fetchBillDetail(order.id),
+    staleTime: 0, // Always refetch
+  });
+
+  const items = billDetail?.details || billDetail?.data?.details || [];
+
+  // Mutation for updating order status
+  const { mutate: changeStatus, isPending } = useMutation({
+    mutationFn: async (newStatus) => {
+      if (status === "Ready") {
+        return await completeOrder(order.id);
+      } else {
+        return await updateOrderStatus(order.id, newStatus);
       }
-    }
-    load();
-  }, [order.id]);
-
-  const handleNext = async () => {
-    console.log("[KitchenCard] Current status:", status, "Order ID:", order.id);
-    try {
+    },
+    onSuccess: () => {
+      // Show success message
       if (status === "Pending") {
-        console.log("[KitchenCard] Updating to Cooking...");
-        await updateOrderStatus(order.id, "Cooking");
         toast.success("Đơn hàng đang được nấu");
       } else if (status === "Cooking") {
-        console.log("[KitchenCard] Updating to Ready...");
-        await updateOrderStatus(order.id, "Ready");
         toast.success("Món đã sẵn sàng");
       } else if (status === "Ready") {
-        console.log("[KitchenCard] Completing order...");
-        await completeOrder(order.id);
         toast.success("Đơn hàng đã hoàn tất");
       }
-      onReload();
-    } catch (e) {
-      console.error("[KitchenCard] Error updating status:", e);
-      toast.error(e.response?.data?.message || "Cập nhật trạng thái thất bại");
+      
+      // Invalidate bill orders query to trigger refetch
+      queryClient.invalidateQueries({ queryKey: ['billOrders'] });
+      
+      // Reload if callback provided
+      if (onReload) {
+        onReload();
+      }
+    },
+    onError: (error) => {
+      console.error("[KitchenCard] Error updating status:", error);
+      toast.error(error?.response?.data?.message || "Cập nhật trạng thái thất bại");
+    },
+  });
+
+  const handleNext = () => {
+    console.log("[KitchenCard] Current status:", status, "Order ID:", order.id);
+    
+    if (status === "Pending") {
+      console.log("[KitchenCard] Updating to Cooking...");
+      changeStatus("Cooking");
+    } else if (status === "Cooking") {
+      console.log("[KitchenCard] Updating to Ready...");
+      changeStatus("Ready");
+    } else if (status === "Ready") {
+      console.log("[KitchenCard] Completing order...");
+      changeStatus("Completed");
     }
   };
 
@@ -50,12 +71,13 @@ export default function KitchenCard({ order, status, onReload }) {
           #{order.order_id}
         </span>
         <Button
-            className="cursor-pointer bg-[#0077b6] hover:bg-green-500 duration-500"
+            className="cursor-pointer bg-[#0077b6] hover:bg-green-500 duration-500 disabled:opacity-50 disabled:cursor-not-allowed"
             size="icon"
             variant="outline"
             onClick={handleNext}
+            disabled={isPending}
         >
-          <Check />
+          {isPending ? "..." : <Check />}
         </Button>
       </div>
 

@@ -2,41 +2,16 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { ShoppingCart, Loader2 } from "lucide-react"
-import { useContext, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import useInit from "@/hooks/useInit"
-import { GlobalContext } from "@/context/GlobalContext"
-import { initMenuOrder } from "@/init/menuOrderInit"
+import { useMenuItems } from "@/hooks/useMenuItems"
 
 export default function MenuOrder({ category, onAdd }) {
-  const ctx = useContext(GlobalContext);
-  const { menu } = ctx;
-  const [loading, setLoading] = useState(false);
-  const [lastCategory, setLastCategory] = useState(null);
   const navigate = useNavigate();
+  
+  // Fetch menu items using React Query
+  const { data: foods = [], isLoading, error, isError } = useMenuItems(category);
 
-  // load data when category changes
-  useInit(() => {
-    if (!category) {
-      console.log("[MenuOrder] No category yet");
-      return;
-    }
-    // Only fetch if category changed
-    if (lastCategory === category) {
-      console.log("[MenuOrder] Category unchanged, skipping fetch");
-      return;
-    }
-    console.log("[MenuOrder] Category changed to:", category);
-    setLoading(true);
-    initMenuOrder(ctx, category)
-      .catch(e => console.error("[MenuOrder] Error:", e))
-      .finally(() => {
-        setLastCategory(category);
-        setLoading(false);
-      });
-  }, [category]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <Loader2 className="w-10 h-10 text-[#0077b6] animate-spin mb-3" />
@@ -45,7 +20,14 @@ export default function MenuOrder({ category, onAdd }) {
     );
   }
 
-  const foods = menu || [];
+  if (isError) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <p className="text-red-600 font-medium">Lỗi tải món ăn</p>
+        <p className="text-gray-500 text-sm mt-2">{error?.message || 'Vui lòng thử lại'}</p>
+      </div>
+    );
+  }
   
   return (
     <TooltipProvider>

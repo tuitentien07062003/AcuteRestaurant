@@ -15,8 +15,7 @@ export const getAllInventories = async (req, res) => {
 
     const inventories = await Inventory.findAll({
       where: whereClause,
-      order: [['created_at', 'DESC']],
-      logging: console.log
+      order: [['created_at', 'DESC']]
     });
     // DISABLED CACHE: await inventoryCacheService.set(cacheKey, inventories);
 

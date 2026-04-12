@@ -6,13 +6,28 @@ import Order from '@/components/Order'
 import MenuOrder from '@/components/MenuOrder'
 import KitchenScreen from '@/components/KitchenScreen'
 import HistoryOrder from '@/components/HistoryOrder'
-import useInit from '@/hooks/useInit'
-import { initPos } from '@/init/posInit'
+import { useCategories } from '@/hooks/useCategories'
 import { GlobalContext } from '@/context/GlobalContext'
 
 const Pos = () => {
   const ctx = useContext(GlobalContext);
   const navigate = useNavigate();
+  
+  // Fetch categories using React Query
+  const { data: categories = [], isLoading: categoriesLoading } = useCategories();
+
+  // Local state for UI
+  const [activeCategory, setActiveCategory] = useState(null);
+  const [activeComponent, setActiveComponent] = useState('menu');
+  const [orderItems, setOrderItems] = useState([]);
+
+  // Set initial category when categories are loaded
+  useEffect(() => {
+    if (categories && categories.length > 0 && !activeCategory) {
+      console.log("[Pos] Setting initial category:", categories[0].code);
+      setActiveCategory(categories[0].code);
+    }
+  }, [categories, activeCategory]);
 
   useEffect(() => {
     console.log("[Pos] user:", ctx.user);
@@ -28,12 +43,6 @@ const Pos = () => {
       return () => clearTimeout(timer);
     }
   }, [ctx.user, navigate]);
-
-  useInit(() => initPos(ctx), []);
-
-  const [orderItems, setOrderItems] = useState([]);
-  const { activeCategory } = ctx;
-  const [activeComponent, setActiveComponent] = useState('menu');
 
   if (!ctx.user) {
     return <div>Loading...</div>; // Or a spinner
@@ -59,7 +68,12 @@ const Pos = () => {
         <div className="flex-1 flex flex-col min-h-0 px-4 pb-2">
           {activeComponent === 'menu' && (
             <>
-              <PosHeader onCategoryChange={ctx.setActiveCategory} />
+              <PosHeader 
+                categories={categories}
+                activeCategory={activeCategory}
+                onCategoryChange={setActiveCategory}
+                isLoading={categoriesLoading}
+              />
               <div className="flex-1 min-h-0 overflow-y-auto py-3">
                 <MenuOrder
                   category={activeCategory}

@@ -1,9 +1,7 @@
-import { useState, useContext, useMemo } from "react"
+import { useState, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import OrderDetailDialog from "./BillDetailDialog.jsx"
-import useInit from "@/hooks/useInit"
-import { GlobalContext } from "@/context/GlobalContext"
-import { initHistory } from "@/init/historyInit"
+import { useBillOrders } from "@/hooks/useBillOrders"
 import {
   Table,
   TableBody,
@@ -41,8 +39,9 @@ const paymentMethod = {
 }
 
 const HistoryOrder = () => {
-  const ctx = useContext(GlobalContext);
-  const [loading, setLoading] = useState(true)
+  // Fetch bill orders with React Query (no auto-refetch for history)
+  const { data: bills = [], isLoading } = useBillOrders(0);
+  
   const [currentPage, setCurrentPage] = useState(1)
   const [openDetail, setOpenDetail] = useState(false)
   const [selectedBillId, setSelectedBillId] = useState(null)  
@@ -50,21 +49,9 @@ const HistoryOrder = () => {
   const pageSize = 10
   const navigate = useNavigate()
 
-  useInit(() => {
-    if (ctx.bills && ctx.bills.length > 0) {
-      console.log("[HistoryOrder] Bills already loaded");
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    initHistory(ctx)
-      .catch(e => console.error("[HistoryOrder] Error:", e))
-      .finally(() => setLoading(false));
-  }, []);
-
   // --- TẤT CẢ HOOKS (USEMEMO) PHẢI ĐẶT TRƯỚC IF (LOADING) ---
-  // Đảm bảo bill luôn là mảng để không bị lỗi khi ctx.bills chưa có dữ liệu
-  const bill = ctx.bills || [];
+  // Đảm bảo bill luôn là mảng để không bị lỗi khi dữ liệu chưa có
+  const bill = bills || [];
 
   const totalRevenue = useMemo(() => bill.reduce((sum, order) => {
     const discount = Number(order.discount_amount || 0);
@@ -140,7 +127,7 @@ const HistoryOrder = () => {
   }
 
   // --- EARLY RETURN (IF LOADING) ĐƯỢC CHUYỂN XUỐNG DƯỚI CÙNG ---
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center h-64">
         <Loader2 className="w-10 h-10 text-[#0077b6] animate-spin mb-3" />

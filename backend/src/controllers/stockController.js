@@ -6,8 +6,7 @@ import { Inventory } from '../models/Inventory.js';
 import Joi from 'joi';
 
 const updateSchema = Joi.object({
-    quantity: Joi.number().min(0).required(),
-    reason: Joi.string().optional()
+    quantity: Joi.number().min(0).required()
 });
 
 export const getStockByStore = async (req, res) => {
@@ -32,15 +31,15 @@ export const updateStockItem = async (req, res) => {
             return res.status(400).json({ message: validationError.details[0].message });
         }
 
-        const { quantity, reason } = value;
-        const userId = req.user.id; // From auth middleware
+        const { quantity } = value;
+
+        const userId = req.user.employee_id; // From auth middleware
 
         const result = await stockService.updateStock(
             parseInt(storeId), 
             parseInt(itemId), 
             quantity, 
-            userId, 
-            reason
+            userId
         );
 
         if (!result.success) {

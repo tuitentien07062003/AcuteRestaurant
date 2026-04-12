@@ -1,16 +1,23 @@
-import React, { useContext } from "react";
+import React from "react";
 import { Button } from "./ui/button";
-import { GlobalContext } from "@/context/GlobalContext";
 
-const PosHeader = ({ onCategoryChange }) => {
-  const { categories, activeCategory } = useContext(GlobalContext);
-
-  if (categories.length === 0) {
+const PosHeader = ({ categories = [], activeCategory, onCategoryChange, isLoading }) => {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
         <div className="flex items-center gap-2 text-[#0077b6]">
           <div className="w-6 h-6 border-2 border-[#0077b6] border-t-transparent rounded-full animate-spin"></div>
           <span>Đang tải danh mục...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (categories.length === 0) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="flex items-center gap-2 text-gray-500">
+          <span>Không có danh mục</span>
         </div>
       </div>
     );

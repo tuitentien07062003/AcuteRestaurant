@@ -59,6 +59,7 @@ Stock.belongsTo(Employee, {
 // 2. Nối với Inventory để lấy thông tin Tên, Đơn vị của vật tư (Cần cho Frontend)
 Stock.belongsTo(Inventory, {
   foreignKey: "item_id",
+  as: "Inventory", // Tên này phải khớp chính xác với alias bạn gọi trong phần include của stockService
   // Không đặt 'as' thì Sequelize mặc định sẽ dùng tên Model là 'Inventory' (khớp với code frontend của bạn)
 });
 

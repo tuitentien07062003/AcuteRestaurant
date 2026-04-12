@@ -1,9 +1,7 @@
-**TASK COMPLETED: Inventory and stock caching disabled. All queries now direct to database.**
+# Inventory Management Pagination Task
 
-Files modified:
-- backend/src/controllers/inventoryController.js (get/set/invalidate commented)
-- backend/src/services/stockService.js (set/invalidate commented)
-
-Next:
-1. cd backend && npm run dev  (restart server)
-2. Test inventory/stock endpoints for fresh data.
+## Plan Steps:
+- [x] Step 1: Read pagination.jsx component
+- [x] Step 2: Update InventoryDashboard.jsx with client-side pagination (state, slicing, Pagination component, search/filter UI)
+- [ ] Step 3: Test pagination on "Tồn kho thực tế" tab
+- [ ] Step 4: Complete task

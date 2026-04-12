@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import ApplyVoucherDialog from "./DiscountDialogPos.jsx";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -11,6 +12,26 @@ export default function Order({ items, setItems }) {
   const [payment, setPayment] = useState("Cash");   // Cash | Momo
   const [voucher, setVoucher] = useState(0);
   const [openVoucherDialog, setOpenVoucherDialog] = useState(false);
+  
+  const queryClient = useQueryClient();
+
+  // Use React Query mutation for creating bill order
+  const { mutate: submitOrder, isPending } = useMutation({
+    mutationFn: async (orderData) => {
+      return await createBillOrder(orderData);
+    },
+    onSuccess: () => {
+      toast.success("Đặt món thành công!");
+      setItems([]);
+      setVoucher(null);
+      // Invalidate bill orders cache to refresh kitchen screen
+      queryClient.invalidateQueries({ queryKey: ['billOrders'] });
+    },
+    onError: (err) => {
+      console.error("[Order] Error:", err);
+      toast.error("Đặt món thất bại!");
+    },
+  });
 
   // Tính tổng tiền
   const total = useMemo(() => {
@@ -41,31 +62,23 @@ export default function Order({ items, setItems }) {
     setItems(prev => prev.filter(i => i.id !== id));
   };
 
-  const handleSubmitOrder = async () => {
+  const handleSubmitOrder = () => {
     if (items.length === 0) {
       toast.error("Chưa có món nào");
       return;
     }
 
-    try {
-      const orderData = {
-        store_id: 7062003,
-        payment_method: payment,
-        voucher_id: voucher ? voucher.id : null,
-        items: items.map(i => ({
-          menu_item_id: i.id,
-          qty: i.qty,
-        }))
-      };
+    const orderData = {
+      store_id: 7062003,
+      payment_method: payment,
+      voucher_id: voucher ? voucher.id : null,
+      items: items.map(i => ({
+        menu_item_id: i.id,
+        qty: i.qty,
+      }))
+    };
 
-      await createBillOrder(orderData);
-      toast.success("Đặt món thành công!");
-      setItems([]);
-      setVoucher(null);
-    } catch (err) {
-      console.error(err);
-      toast.error("Đặt món thất bại!");
-    }
+    submitOrder(orderData);
   };
 
   return (
@@ -219,12 +232,22 @@ export default function Order({ items, setItems }) {
       {/* Confirm Button */}
       <div className="px-3 pb-3">
         <Button 
-          className="w-full cursor-pointer text-lg h-14 bg-gradient-to-r from-[#0077b6] to-[#0096c7] hover:from-[#006699] hover:to-[#0077b6] shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] font-semibold"
+          className="w-full cursor-pointer text-lg h-14 bg-gradient-to-r from-[#0077b6] to-[#0096c7] hover:from-[#006699] hover:to-[#0077b6] shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
           onClick={handleSubmitOrder}
+          disabled={isPending}
         >
           <div className="flex items-center gap-2">
-            <Receipt size={20} />
-            <span>XÁC NHẬN ĐƠN</span>
+            {isPending ? (
+              <>
+                <span className="animate-spin">⏳</span>
+                <span>ĐANG XỬ LÝ...</span>
+              </>
+            ) : (
+              <>
+                <Receipt size={20} />
+                <span>XÁC NHẬN ĐƠN</span>
+              </>
+            )}
           </div>
         </Button>
       </div>

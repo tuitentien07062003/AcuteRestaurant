@@ -25,11 +25,10 @@ class StockService {
         // DB fetch
         const stocks = await Stock.findAll({
             where: { store_id: storeId },
-            //include: [
-            //    { model: Employee, as: 'updatedBy', attributes: ['id', 'full_name'] },
-            //    { model: Inventory }
-            //]
-            logging: console.log
+            include: [
+                { model: Employee, as: 'updatedBy', attributes: ['id', 'full_name'] },
+                { model: Inventory, as: 'Inventory' }
+            ]
         });
 
         // DISABLED CACHE: await stockCacheService.set(storeId, stocks);
@@ -42,10 +41,9 @@ class StockService {
      * @param {number} itemId 
      * @param {number} newQuantity 
      * @param {string} userId - UUID from req.user.id
-     * @param {string} [reason='manual_adjustment'] 
      * @returns {Promise<{success: boolean, logId?: number, error?: string}>}
      */
-    async updateStock(storeId, itemId, newQuantity, userId, reason = REASON_DEFAULT) {
+    async updateStock(storeId, itemId, newQuantity, userId) {
         if (newQuantity < 0) {
             return { success: false, error: 'Quantity cannot be negative' };
         }

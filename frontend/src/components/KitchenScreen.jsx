@@ -1,19 +1,18 @@
 import { useContext } from "react";
 import KitchenColumn from "./KitchenColumn";
-import useInit from "@/hooks/useInit";
-import { GlobalContext } from "@/context/GlobalContext";
-import { initKitchen } from "@/init/kitchenInit";
+import { useBillOrders } from "@/hooks/useBillOrders";
 
 export default function KitchenScreen() {
-  const ctx = useContext(GlobalContext);
+  // Fetch bill orders with auto-refetch every 5 seconds for real-time updates
+  const { data: orders = [], isLoading, refetch } = useBillOrders(5000);
 
-  useInit(() => {
-    if (!ctx.bills || ctx.bills.length === 0) {
-      initKitchen(ctx).catch(e => console.error("[KitchenScreen] Error:", e));
-    }
-  }, []);
-
-  const orders = ctx.bills;
+  if (isLoading) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <p className="text-gray-500">Đang tải đơn hàng...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full grid grid-cols-3 gap-3 p-3">
@@ -22,21 +21,21 @@ export default function KitchenScreen() {
         titleColor="text-yellow-600"
         bgColor="bg-yellow-50"
         orders={orders.filter(o => o.status === "Pending")}
-        onReload={() => initKitchen(ctx)}
+        onReload={refetch}
       />
       <KitchenColumn
         title="Đang nấu"
         titleColor="text-blue-600"
         bgColor="bg-blue-50"
         orders={orders.filter(o => o.status === "Cooking")}
-        onReload={() => initKitchen(ctx)}
+        onReload={refetch}
       />
       <KitchenColumn
         title="Hoàn thành"
         titleColor="text-green-600"
         bgColor="bg-green-50"
         orders={orders.filter(o => o.status === "Ready")}
-        onReload={() => initKitchen(ctx)}
+        onReload={refetch}
       />
     </div>
   );
