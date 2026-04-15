@@ -6,12 +6,11 @@ import App from './App.jsx'
 import { GlobalProvider } from "./context/GlobalContext"
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 
-// Create a client for React Query
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
-      refetchOnWindowFocus: false, // Prevent auto-refetch when tab regains focus
+      refetchOnWindowFocus: false,
     },
   },
 });
@@ -24,5 +23,5 @@ createRoot(document.getElementById('root')).render(
       </GlobalProvider>
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
-  </StrictMode>,
+  </StrictMode>
 )
