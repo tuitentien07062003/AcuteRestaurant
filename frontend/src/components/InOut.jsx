@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { toast } from "sonner";
+import { formatHours } from "@/lib/formatters";
 import { 
   Dialog,
   DialogContent,
@@ -24,7 +25,7 @@ import { checkInOut } from "@/api/timesheet";
             toast.success("Vào ca thành công");
         }
         if (res.type === "CHECK_OUT") {
-            toast.success("Ra ca thành công. Thời gian làm việc: " + res.total_hours + " giờ");
+            toast.success("Ra ca thành công. Thời gian làm việc: " + formatHours(res.total_hours));
         }
 
         setInternalId("");

@@ -1,4 +1,5 @@
 import { DataTypes } from "sequelize";
+import { Store } from "./Store.js";
 import { sequelize } from "../config/db.js";
 
 export const Employee = sequelize.define(
@@ -64,6 +65,15 @@ export const Employee = sequelize.define(
     created_at: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW,
+    },
+
+    store_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true, 
+      references: {
+        model: Store,
+        key: 'id'
+      }
     }
   },
 
@@ -73,3 +83,6 @@ export const Employee = sequelize.define(
     underscored: false,
   }
 );
+
+Store.hasMany(Employee, { foreignKey: 'store_id', as: 'employees' });
+Employee.belongsTo(Store, { foreignKey: 'store_id', as: 'store' });

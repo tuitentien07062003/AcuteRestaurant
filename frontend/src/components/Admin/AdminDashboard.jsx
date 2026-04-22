@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom"
 import AdminSidebar from "./AdminSidebar"
 import RevenueDashboard from "./RevenueDashboard"
 import InventoryDashboard from "./InventoryDashboard"
-import SalaryDashboard from "./SalaryDashboard"
+import SalaryCalculationPage from "./SalaryCalculationPage"
 import EmployeesDashboard from "./EmployeesDashboard"
 import DocumentsDashboard from "./DocumentsDashboard"
 import PaymentRequestDashboard from "./PaymentRequestDashboard"
@@ -180,7 +180,7 @@ const Admin = () => {
       case "inventory":
         return <InventoryDashboard />
       case "salary":
-        return <SalaryDashboard />
+        return <SalaryCalculationPage />
       case "employees":
         return <EmployeesDashboard />
       case "documents":
