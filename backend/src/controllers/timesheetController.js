@@ -35,6 +35,9 @@ export const checkInOut = async (req, res) => {
             return res.status(404).json({message:"Nhân viên không tồn tại"});
         }
 
+        // Trước khi thực hiện chấm công cho ngày hôm nay, kiểm tra và đóng các ca mở của các ngày trước
+        await closePreviousOpenShifts(employee.id);
+
         const yesterday = new Date();
         yesterday.setDate(yesterday.getDate() - 1);
 
@@ -110,5 +113,50 @@ export const checkInOut = async (req, res) => {
     } catch (err) {
         console.error(err);
         return res.status(500).json({message:"Lỗi server"});
+    }
+};
+
+// Hàm đóng các ca mở của các ngày trước
+const closePreviousOpenShifts = async (employeeId) => {
+    try {
+        const today = new Date();
+        const startToday = new Date(today);
+        startToday.setHours(0, 0, 0, 0);
+
+        // Tìm tất cả ca mở trước ngày hôm nay
+        const openShifts = await Timesheet.findAll({
+            where: {
+                employee_id: employeeId,
+                check_out: null,
+                work_day: {
+                    [Op.lt]: startToday
+                }
+            }
+        });
+
+        if (openShifts.length === 0) {
+            return;
+        }
+
+        console.log(`[Close Previous Shifts] Tìm thấy ${openShifts.length} ca mở trước ngày hôm nay cho nhân viên ${employeeId}`);
+
+        // Đóng tất cả ca mở vào lúc 23:59:59 của ngày đó
+        for (const shift of openShifts) {
+            const closeTime = new Date(shift.work_day);
+            closeTime.setHours(23, 59, 59, 999);
+
+            const totalHours = ((closeTime - new Date(shift.check_in)) / (1000 * 60 * 60)).toFixed(2);
+
+            await shift.update({
+                check_out: closeTime,
+                total_hours: totalHours
+            });
+
+            console.log(`[Close Previous Shifts] Đã đóng ca ngày ${shift.work_day.toISOString().split('T')[0]}: ${totalHours}h`);
+        }
+
+        console.log(`[Close Previous Shifts] Hoàn thành đóng ${openShifts.length} ca mở`);
+    } catch (error) {
+        console.error('[Close Previous Shifts] Lỗi:', error);
     }
 };

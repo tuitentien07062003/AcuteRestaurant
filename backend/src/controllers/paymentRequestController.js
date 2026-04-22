@@ -53,7 +53,7 @@ export const getPaymentRequestById = async (req, res) => {
 export const createPaymentRequest = async (req, res) => {
   const transaction = await PaymentRequest.sequelize.transaction();
   try {
-    const { store_id, requester_id, reason, details } = req.body;
+    const { store_id, requester_id, reason, note, attachment_url, details } = req.body;
 
     if (!store_id || !requester_id || !reason || !details || !Array.isArray(details) || details.length === 0) {
       return res.status(400).json({ message: "Thiếu thông tin: store_id, requester_id, reason, details" });
@@ -71,6 +71,8 @@ export const createPaymentRequest = async (req, res) => {
       store_id,
       requester_id,
       reason,
+      note: note || null,
+      attachment_url: attachment_url || null,
       total_amount
     }, { transaction });
 
@@ -81,7 +83,6 @@ export const createPaymentRequest = async (req, res) => {
         item_name: detail.item_name,
         quantity: detail.quantity || 1,
         unit_price: detail.unit_price,
-        total_price: (detail.quantity || 1) * detail.unit_price,
         invoice_photo_url: detail.invoice_photo_url,
         note: detail.note
       }, { transaction });
