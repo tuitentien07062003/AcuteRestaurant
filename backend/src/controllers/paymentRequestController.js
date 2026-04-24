@@ -16,7 +16,7 @@ export const getAllPaymentRequests = async (req, res) => {
     const requests = await PaymentRequest.findAll({
       where: whereClause,
       include: [
-        { model: Store, as: "store", attributes: ["id", "name"] },
+        { model: Store, as: "store", attributes: ["id", "name_store"] },
         { model: Employee, as: "requester", attributes: ["id", "full_name"] },
         { model: Employee, as: "reviewer", attributes: ["id", "full_name"] },
         { model: PaymentRequestDetail, as: "details" }

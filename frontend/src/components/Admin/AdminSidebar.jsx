@@ -1,5 +1,7 @@
 import { useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
+import { useContext } from "react"
+import { GlobalContext } from "@/context/GlobalContext"
 import { 
   LayoutDashboard, 
   DollarSign, 
@@ -9,26 +11,36 @@ import {
   CreditCard, 
   LogOut,
   ChevronRight,
-  BarChart3
+  BarChart3,
+  CheckCircle,
+  History
 } from "lucide-react"
-
-const menuItems = [
-  { id: 'dashboard', icon: LayoutDashboard, label: 'Tổng quan', path: '/admin' },
-  { id: 'revenue', icon: DollarSign, label: 'Doanh thu', path: '/admin/doanhthu' },
-  { id: 'inventory', icon: Package, label: 'Kiểm kho', path: '/admin/kiemkho' },
-  { id: 'salary', icon: CreditCard, label: 'Tính lương', path: '/admin/tinhluong' },
-  { id: 'employees', icon: Users, label: 'Nhân viên', path: '/admin/nhanvien' },
-  { id: 'documents', icon: FileText, label: 'Hồ sơ', path: '/admin/hoso' },
-  { id: 'payment', icon: CreditCard, label: 'Phiếu thanh toán', path: '/admin/phie_thanhtoan' },
-]
 
 const AdminSidebar = ({ activeMenu, onSelect }) => {
   const navigate = useNavigate()
   const { tab } = useParams()
+  const { user } = useContext(GlobalContext)
   const [hoveredItem, setHoveredItem] = useState(null)
 
   // Get current active tab from URL
   const currentTab = tab || 'dashboard'
+
+  const baseMenuItems = [
+    { id: 'dashboard', icon: LayoutDashboard, label: 'Tổng quan', path: '/admin' },
+    { id: 'revenue', icon: DollarSign, label: 'Doanh thu', path: '/admin/doanhthu' },
+    { id: 'inventory', icon: Package, label: 'Kiểm kho', path: '/admin/kiemkho' },
+    { id: 'salary', icon: CreditCard, label: 'Tính lương', path: '/admin/tinhluong' },
+    { id: 'employees', icon: Users, label: 'Nhân viên', path: '/admin/nhanvien' },
+    { id: 'documents', icon: FileText, label: 'Hồ sơ', path: '/admin/hoso' },
+    { id: 'payment', icon: CreditCard, label: 'Phiếu thanh toán', path: '/admin/phie_thanhtoan' },
+  ]
+
+  const smMenuItems = [
+    { id: 'approval', icon: CheckCircle, label: 'Xét duyệt yêu cầu', path: '/admin/xetduyet' },
+    { id: 'history', icon: History, label: 'Lịch sử hệ thống', path: '/admin/lichsu' },
+  ]
+
+  const menuItems = user?.role === 'SM' ? [...baseMenuItems, ...smMenuItems] : baseMenuItems
 
   const handleLogout = () => {
     navigate("/login")

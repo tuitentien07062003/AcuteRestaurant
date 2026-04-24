@@ -22,6 +22,8 @@ function App() {
             <Route path="/admin/nhanvien" element={<Admin />} />
             <Route path="/admin/hoso" element={<Admin />} />
             <Route path="/admin/phie_thanhtoan" element={<Admin />} />
+            <Route path="/admin/xetduyet" element={<Admin />} />
+            <Route path="/admin/lichsu" element={<Admin />} />
             <Route path="*" element={<Pos />} />
           </Routes>
         </BrowserRouter>

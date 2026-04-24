@@ -77,3 +77,6 @@ PaymentRequest.belongsTo(Employee, { foreignKey: "requester_id", as: "requester"
 
 Employee.hasMany(PaymentRequest, { foreignKey: "reviewer_id", as: "requests_reviewed" });
 PaymentRequest.belongsTo(Employee, { foreignKey: "reviewer_id", as: "reviewer" });
+
+Store.hasMany(PaymentRequest, { foreignKey: "store_id", as: "payment_requests" });
+PaymentRequest.belongsTo(Store, { foreignKey: "store_id", as: "store" });

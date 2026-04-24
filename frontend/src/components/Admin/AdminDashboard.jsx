@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useContext } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import AdminSidebar from "./AdminSidebar"
 import RevenueDashboard from "./RevenueDashboard"
@@ -7,6 +7,9 @@ import SalaryCalculationPage from "./SalaryCalculationPage"
 import EmployeesDashboard from "./EmployeesDashboard"
 import DocumentsDashboard from "./DocumentsDashboard"
 import PaymentRequestDashboard from "./PaymentRequestDashboard"
+import ApprovalDashboard from "./ApprovalDashboard"
+import HistoryDashboard from "./HistoryDashboard"
+import { GlobalContext } from "@/context/GlobalContext"
 import { 
   LayoutDashboard, 
   BarChart3 
@@ -138,11 +141,14 @@ const pathToComponentMap = {
   'nhanvien': 'employees',
   'hoso': 'documents',
   'phie_thanhtoan': 'payment',
+  'xetduyet': 'approval',
+  'lichsu': 'history',
 }
 
 const Admin = () => {
   const { tab } = useParams()
   const navigate = useNavigate()
+  const { user } = useContext(GlobalContext)
   const [activeComponent, setActiveComponent] = useState("dashboard")
 
   // Update active component based on URL
@@ -167,6 +173,8 @@ const Admin = () => {
       'employees': '/admin/nhanvien',
       'documents': '/admin/hoso',
       'payment': '/admin/phie_thanhtoan',
+      'approval': '/admin/xetduyet',
+      'history': '/admin/lichsu',
     }
     navigate(pathMap[componentId] || '/admin')
   }
@@ -187,6 +195,10 @@ const Admin = () => {
         return <DocumentsDashboard />
       case "payment":
         return <PaymentRequestDashboard />
+      case "approval":
+        return user?.role === 'SM' ? <ApprovalDashboard /> : <DashboardOverview />
+      case "history":
+        return user?.role === 'SM' ? <HistoryDashboard /> : <DashboardOverview />
       default:
         return <DashboardOverview />
     }

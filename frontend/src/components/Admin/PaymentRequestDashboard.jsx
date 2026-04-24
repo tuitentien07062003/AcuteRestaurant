@@ -1,4 +1,4 @@
-import { useState, useContext } from "react"
+import { useState, useContext, useEffect } from "react"
 import { 
   CreditCard, 
   Search, 
@@ -12,7 +12,8 @@ import {
   User,
   Calendar,
   DollarSign,
-  Filter
+  Filter,
+  RefreshCw
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -27,45 +28,48 @@ const generateInvoiceImageUrl = () => {
   return `https://picsum.photos/600/400?random=${randomId}`;
 }
 
-// Mock payment requests data
-const mockPaymentRequests = [
-  {
-    id: 1,
-    title: "Phiếu mua hàng gấp - Bột chiên",
-    type: "purchase",
-    category: "Nhập hàng",
-    amount: 4200000,
-    recipient: "Nhà cung cấp ABC",
-    reason: "Nhập gấp nguyên liệu phục vụ cuối tuần",
-    note: "Hóa đơn đỏ đã scan đính kèm",
-    status: "pending",
-    request_date: "2024-04-12",
-    approved_date: null,
-    requester: "Admin",
-    attachment_url: "https://picsum.photos/600/400?random=sample1"
-  }
-]
-
-const categoryIcons = {
-  "Tiện ích": { icon: DollarSign, color: "bg-blue-50 text-blue-600" },
-  "Nhà cung cấp": { icon: User, color: "bg-purple-50 text-purple-600" },
-  "Lương": { icon: CreditCard, color: "bg-green-50 text-green-600" },
-  "Marketing": { icon: FileText, color: "bg-orange-50 text-orange-600" },
-}
-
 const statusConfig = {
   pending: { label: "Chờ duyệt", color: "bg-yellow-100 text-yellow-700", icon: Clock },
+  PENDING: { label: "Chờ duyệt", color: "bg-yellow-100 text-yellow-700", icon: Clock },
+  sent: { label: "Đã gửi", color: "bg-blue-100 text-blue-700", icon: Send },
+  SENT: { label: "Đã gửi", color: "bg-blue-100 text-blue-700", icon: Send },
   approved: { label: "Đã duyệt", color: "bg-green-100 text-green-700", icon: CheckCircle },
+  paid: { label: "Đã thanh toán", color: "bg-green-100 text-green-700", icon: CheckCircle },
+  PAID: { label: "Đã thanh toán", color: "bg-green-100 text-green-700", icon: CheckCircle },
   rejected: { label: "Từ chối", color: "bg-red-100 text-red-700", icon: XCircle },
+  REJECTED: { label: "Từ chối", color: "bg-red-100 text-red-700", icon: XCircle },
 }
 
 const PaymentRequestDashboard = () => {
-  const [paymentRequests, setPaymentRequests] = useState(mockPaymentRequests)
+  const [paymentRequests, setPaymentRequests] = useState([])
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState("all")
   const [showForm, setShowForm] = useState(false)
   const [creating, setCreating] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const { user } = useContext(GlobalContext)
+
+  // Fetch payment requests from API
+  const fetchPaymentRequests = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const response = await paymentRequestApi.getAll()
+      const requests = response?.data || []
+      setPaymentRequests(requests)
+    } catch (err) {
+      console.error('Lỗi khi tải phiếu mua hàng:', err)
+      setError('Không thể tải danh sách phiếu mua hàng')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Fetch data on mount
+  useEffect(() => {
+    fetchPaymentRequests()
+  }, [])
 
   const [newRequest, setNewRequest] = useState({
     title: "",
@@ -187,24 +191,8 @@ const PaymentRequestDashboard = () => {
 
     setCreating(true)
     try {
-      const response = await paymentRequestApi.create(requestPayload)
-      const createdId = response?.data?.request?.id || paymentRequests.length + 1
-      const storedRequest = {
-        id: createdId,
-        title: newRequest.title,
-        category: newRequest.reason,
-        amount: calculateTotalAmount(),
-        recipient: "Nhà cung cấp",
-        reason: newRequest.reason,
-        note: newRequest.note,
-        status: "pending",
-        request_date: new Date().toISOString().split('T')[0],
-        approved_date: null,
-        requester: "Admin",
-        attachment_url: newRequest.attachment_url,
-        details: requestPayload.details
-      }
-      setPaymentRequests([storedRequest, ...paymentRequests])
+      await paymentRequestApi.create(requestPayload)
+      alert('Phiếu mua hàng đã được tạo thành công!')
       setShowForm(false)
       setNewRequest({
         title: "",
@@ -215,6 +203,8 @@ const PaymentRequestDashboard = () => {
         attachment_url: "",
         details: [{ item_name: "", quantity: 1, unit_price: "", invoice_photo_url: "", note: "" }]
       })
+      // Refresh the list
+      await fetchPaymentRequests()
     } catch (error) {
       console.error('Tạo phiếu thất bại', error)
       alert('Không thể tạo phiếu. Vui lòng thử lại.')
@@ -231,34 +221,36 @@ const PaymentRequestDashboard = () => {
 
   // Filter payment requests
   const filteredRequests = paymentRequests.filter(req => {
-    const matchesSearch = req.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         req.recipient.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = filterStatus === "all" || req.status === filterStatus
+    const matchesSearch = 
+      (req.reason && req.reason.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (req.note && req.note.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (req.id && req.id.toLowerCase().includes(searchTerm.toLowerCase()))
+    const matchesStatus = filterStatus === "all" || req.status === filterStatus || req.status?.toUpperCase() === filterStatus.toUpperCase()
     return matchesSearch && matchesStatus
   })
 
   const stats = [
     { 
       label: "Chờ duyệt", 
-      value: paymentRequests.filter(r => r.status === "pending").length, 
+      value: paymentRequests.filter(r => r.status === "PENDING" || r.status === "pending").length, 
       color: "text-yellow-600",
       bgColor: "bg-yellow-50"
     },
     { 
-      label: "Đã duyệt", 
-      value: paymentRequests.filter(r => r.status === "approved").length, 
+      label: "Đã gửi", 
+      value: paymentRequests.filter(r => r.status === "SENT" || r.status === "sent").length, 
+      color: "text-blue-600",
+      bgColor: "bg-blue-50"
+    },
+    { 
+      label: "Đã thanh toán", 
+      value: paymentRequests.filter(r => r.status === "PAID" || r.status === "paid").length, 
       color: "text-green-600",
       bgColor: "bg-green-50"
     },
     { 
-      label: "Từ chối", 
-      value: paymentRequests.filter(r => r.status === "rejected").length, 
-      color: "text-red-600",
-      bgColor: "bg-red-50"
-    },
-    { 
       label: "Tổng tiền", 
-      value: paymentRequests.reduce((sum, r) => sum + r.amount, 0), 
+      value: paymentRequests.reduce((sum, r) => sum + (Number(r.total_amount) || 0), 0), 
       color: "text-[#0077b6]",
       bgColor: "bg-blue-50",
       isCurrency: true
@@ -573,8 +565,8 @@ const PaymentRequestDashboard = () => {
                 </div>
                 <div className={`w-12 h-12 ${stat.bgColor} rounded-xl flex items-center justify-center`}>
                   {index === 0 ? <Clock className={stat.color} size={24} /> :
-                   index === 1 ? <CheckCircle className={stat.color} size={24} /> :
-                   index === 2 ? <XCircle className={stat.color} size={24} /> :
+                   index === 1 ? <Send className={stat.color} size={24} /> :
+                   index === 2 ? <CheckCircle className={stat.color} size={24} /> :
                    <DollarSign className={stat.color} size={24} />}
                 </div>
               </div>
@@ -607,9 +599,10 @@ const PaymentRequestDashboard = () => {
                 className="border rounded-lg px-3 py-2 text-sm bg-white"
               >
                 <option value="all">Tất cả</option>
-                <option value="pending">Chờ duyệt</option>
-                <option value="approved">Đã duyệt</option>
-                <option value="rejected">Từ chối</option>
+                <option value="PENDING">Chờ duyệt</option>
+                <option value="SENT">Đã gửi</option>
+                <option value="PAID">Đã thanh toán</option>
+                <option value="REJECTED">Từ chối</option>
               </select>
             </div>
           </div>
@@ -618,63 +611,96 @@ const PaymentRequestDashboard = () => {
 
       {/* Payment Requests List */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg font-semibold">Danh sách phiếu mua hàng</CardTitle>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={fetchPaymentRequests}
+            disabled={loading}
+          >
+            <RefreshCw size={16} className={`mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Đồng bộ
+          </Button>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-3">
-            {filteredRequests.map((req) => {
-              const categoryInfo = categoryIcons[req.category] || { icon: FileText, color: "bg-gray-50 text-gray-600" }
-              const statusInfo = statusConfig[req.status]
-              const Icon = categoryInfo.icon
-              const StatusIcon = statusInfo.icon
-              
-              return (
-                <div 
-                  key={req.id} 
-                  className="flex items-center justify-between p-4 border rounded-xl hover:shadow-md transition-shadow bg-white"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${categoryInfo.color}`}>
-                      <Icon size={24} />
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-gray-800">{req.title}</h3>
-                      <div className="flex items-center gap-3 mt-1">
-                        <span className="text-sm text-gray-500 flex items-center gap-1">
-                          <User size={14} />
-                          {req.recipient}
-                        </span>
-                        <span className="text-sm text-gray-400">•</span>
-                        <span className="text-sm text-gray-500 flex items-center gap-1">
-                          <Calendar size={14} />
-                          {formatDate(req.request_date)}
-                        </span>
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+              {error}
+            </div>
+          )}
+          
+          {loading && paymentRequests.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-gray-500">Đang tải dữ liệu...</p>
+            </div>
+          ) : paymentRequests.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-gray-500">Chưa có phiếu mua hàng nào</p>
+            </div>
+          ) : (
+            <div className="grid gap-3">
+              {filteredRequests.map((req) => {
+                const statusInfo = statusConfig[req.status] || statusConfig.PENDING
+                const StatusIcon = statusInfo.icon
+                
+                return (
+                  <div 
+                    key={req.id} 
+                    className="flex items-center justify-between p-4 border rounded-xl hover:shadow-md transition-shadow bg-white"
+                  >
+                    <div className="flex items-center gap-4 flex-1">
+                      <div className="bg-blue-50 text-blue-600 w-12 h-12 rounded-xl flex items-center justify-center">
+                        <FileText size={24} />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-medium text-gray-800">{req.reason || req.title || 'Phiếu mua hàng'}</h3>
+                        <div className="flex items-center gap-3 mt-1 flex-wrap">
+                          {req.requester && (
+                            <span className="text-sm text-gray-500 flex items-center gap-1">
+                              <User size={14} />
+                              {typeof req.requester === 'object' ? req.requester.full_name : req.requester}
+                            </span>
+                          )}
+                          {req.request_date && (
+                            <>
+                              <span className="text-sm text-gray-400">•</span>
+                              <span className="text-sm text-gray-500 flex items-center gap-1">
+                                <Calendar size={14} />
+                                {formatDate(req.request_date)}
+                              </span>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <p className="font-bold text-[#0077b6] text-lg">{formatCurrency(req.amount)}</p>
-                      <p className="text-xs text-gray-400">
-                        {req.approved_date ? `Duyệt: ${formatDate(req.approved_date)}` : "-"}
-                      </p>
+                    
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <p className="font-bold text-[#0077b6] text-lg">
+                          {req.total_amount ? formatCurrency(req.total_amount) : '0 đ'}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          {req.reviewed_at ? `Duyệt: ${formatDate(req.reviewed_at)}` : "-"}
+                        </p>
+                      </div>
+                      
+                      <Badge className={statusInfo.color}>
+                        <StatusIcon size={14} className="mr-1" />
+                        {statusInfo.label}
+                      </Badge>
+                      
+                      {req.attachment_url && (
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <Download size={16} className="text-gray-600" />
+                        </Button>
+                      )}
                     </div>
-                    
-                    <Badge className={statusInfo.color}>
-                      <StatusIcon size={14} className="mr-1" />
-                      {statusInfo.label}
-                    </Badge>
-                    
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                      <Download size={16} className="text-gray-600" />
-                    </Button>
                   </div>
-                </div>
-              )
-            })}
-          </div>
+                )
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
