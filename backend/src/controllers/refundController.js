@@ -8,7 +8,7 @@ export const refundOrder = async (req, res) => {
         const { id } = req.params;
         const { reason } = req.body;
 
-        const employee_id = req.session.user.employee_id;
+        const employee_id = req.user.employee_id;
 
         const bill = await BillOrder.findByPk(id, { transaction: t });
 
