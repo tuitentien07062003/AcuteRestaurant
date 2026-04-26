@@ -12,8 +12,7 @@ import {
   LogOut,
   ChevronRight,
   BarChart3,
-  CheckCircle,
-  History
+  CheckCircle
 } from "lucide-react"
 
 const AdminSidebar = ({ activeMenu, onSelect }) => {
@@ -37,7 +36,6 @@ const AdminSidebar = ({ activeMenu, onSelect }) => {
 
   const smMenuItems = [
     { id: 'approval', icon: CheckCircle, label: 'Xét duyệt yêu cầu', path: '/admin/xetduyet' },
-    { id: 'history', icon: History, label: 'Lịch sử hệ thống', path: '/admin/lichsu' },
   ]
 
   const menuItems = user?.role === 'SM' ? [...baseMenuItems, ...smMenuItems] : baseMenuItems

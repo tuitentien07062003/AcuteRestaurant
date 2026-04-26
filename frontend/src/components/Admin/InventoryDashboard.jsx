@@ -1,29 +1,17 @@
 import { useState, useEffect, useContext, useMemo } from "react"
 import { 
   Search,
-  Filter,
   RefreshCw,
   ClipboardList,
-  Download,
-  ChevronLeft,
-  ChevronRight,
-  MoreHorizontal,
   Plus,
   ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
-  Clock
+  Clock,
+  FileSpreadsheet,
+  AlertTriangle,
+  Package,
+  TrendingDown
 } from "lucide-react"
-import {
-  Pagination, 
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious
-} from "@/components/ui/pagination"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { 
@@ -51,420 +39,416 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
-import inventoryApi from "@/api/inventoryApi"
 import stockApi from "@/api/stockApi"
-import { GlobalContext } from "@/context/GlobalContext" 
+import { GlobalContext } from "@/context/GlobalContext"
+
+// Các hàm lấy dữ liệu do Backend trả về qua bảng Stock (đã include Inventory)
+const getStockValue = (item) => Number(item?.quantity || 0);
+const getItemName = (item) => item?.inventory?.name || item?.Inventory?.name || item?.name || "Chưa có tên";
+const getItemCategory = (item) => item?.inventory?.category || item?.Inventory?.category || item?.category || "Chưa phân loại";
+const getItemUnit = (item) => item?.inventory?.unit || item?.Inventory?.unit || item?.unit || "-";
+const getItemMinStock = (item) => Number(item?.inventory?.min_stock || item?.Inventory?.min_stock || item?.min_stock || 0);
 
 const InventoryDashboard = () => {
-  const { user } = useContext(GlobalContext);
-  const storeId = 7062003;
-
-  // --- STATES ---
-  const [stocks, setStocks] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  
-  // States: Filters & Search
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState("ALL");
-  
-  // States: Sorting
-  const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
-
-  // States: Pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
-  
-  // Modal States
-  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState({ storeId: null, itemId: null });
+  const { user } = useContext(GlobalContext)
+  const [inventory, setInventory] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [filterCategory, setFilterCategory] = useState("all")
+  const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' })
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false)
+  const [selectedMaterial, setSelectedMaterial] = useState(null)
   const [updateForm, setUpdateForm] = useState({
-    quantity: 0,
-    reason: ""
-  });
+    quantity: "",
+    reason: "",
+    note: ""
+  })
 
-  // --- FETCH DATA ---
-  const loadData = async () => {
-    setIsLoading(true);
-    try {
-      const response = await stockApi.getStockByStore(storeId);
-      setStocks(response.data || []);
-    } catch (error) {
-      console.error("Lỗi lấy dữ liệu kho:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Lấy storeId từ user đang đăng nhập, mặc định là 1 nếu chưa có
+  const storeId = user?.store_id || 7062003;
 
   useEffect(() => {
-    loadData();
-  }, []);
+    fetchInventoryData()
+  }, [])
 
-  // --- HANDLERS ---
-  const openUpdateModal = (storeId, itemId, currentQty) => {
-    setSelectedItem({ storeId, itemId });
-    setUpdateForm({ quantity: currentQty, reason: "" });
-    setIsUpdateModalOpen(true);
-  };
+  const fetchInventoryData = async () => {
+    setLoading(true)
+    try {
+      // Gọi đúng API lấy tồn kho theo cửa hàng
+      const response = await stockApi.getStockByStore(storeId)
+      const data = response?.data || response || []
+      setInventory(Array.isArray(data) ? data : [])
+    } catch (error) {
+      console.error("Lỗi khi tải dữ liệu kho:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleExportCSV = () => {
+    if (filteredInventory.length === 0) return
+
+    const now = new Date()
+    const day = String(now.getDate()).padStart(2, '0')
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    const year = now.getFullYear()
+    
+    const fileName = `inventory_${day}_${month}_${year}.csv`
+
+    const headers = ["STT", "Tên vật tư", "Danh mục", "Số lượng hiện tại", "Đơn vị", "Mức tối thiểu", "Trạng thái", "Cập nhật cuối"]
+    
+    const rows = filteredInventory.map((item, index) => {
+      const itemName = getItemName(item)
+      const currentStock = getStockValue(item)
+      const minStock = getItemMinStock(item)
+      const category = getItemCategory(item)
+      const unit = getItemUnit(item)
+      const status = currentStock <= minStock ? "Sắp hết hàng" : "Bình thường"
+      
+      return [
+        index + 1,
+        itemName,
+        category,
+        currentStock,
+        unit,
+        minStock,
+        status,
+        new Date(item.updated_at || Date.now()).toLocaleString('vi-VN')
+      ]
+    })
+
+    const csvContent = "\uFEFF" + [headers, ...rows].map(e => e.map(value => `"${value}"`).join(",")).join("\n")
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement("a")
+    link.href = URL.createObjectURL(blob)
+    link.download = fileName
+    link.click()
+  }
+
+  const filteredInventory = useMemo(() => {
+    return inventory
+      .filter(item => {
+        const itemName = getItemName(item)
+        const category = getItemCategory(item)
+        const matchesSearch = itemName.toLowerCase().includes(searchTerm.toLowerCase())
+        const matchesCategory = filterCategory === "all" || category === filterCategory
+        return matchesSearch && matchesCategory
+      })
+      .sort((a, b) => {
+        if (sortConfig.key === 'quantity') {
+           const valA = getStockValue(a)
+           const valB = getStockValue(b)
+           return sortConfig.direction === 'asc' ? valA - valB : valB - valA
+        }
+
+        const valA = getItemName(a)
+        const valB = getItemName(b)
+        
+        if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1
+        if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1
+        return 0
+      })
+  }, [inventory, searchTerm, filterCategory, sortConfig])
+
+  const categories = useMemo(() => {
+    const cats = inventory.map(item => getItemCategory(item)).filter(cat => cat !== "Chưa phân loại")
+    return ["all", ...new Set(cats)]
+  }, [inventory])
+
+  const stats = useMemo(() => {
+    const totalItems = inventory.length
+    const lowStockItems = inventory.filter(item => {
+        const stock = getStockValue(item)
+        return stock <= getItemMinStock(item) && stock > 0
+    }).length
+    const outOfStockItems = inventory.filter(item => {
+        const stock = getStockValue(item)
+        return stock <= 0
+    }).length
+    
+    return { totalItems, lowStockItems, outOfStockItems }
+  }, [inventory])
+
+  const requestSort = (key) => {
+    let direction = 'asc'
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc'
+    }
+    setSortConfig({ key, direction })
+  }
+
+  const handleOpenUpdate = (material) => {
+    setSelectedMaterial(material)
+    setUpdateForm({
+      quantity: "",
+      reason: "",
+      note: ""
+    })
+    setIsUpdateModalOpen(true)
+  }
 
   const handleUpdateStock = async () => {
     try {
       const payload = {
-        quantity: Number(updateForm.quantity)
-      };
-
-      await stockApi.updateStock(selectedItem.storeId, selectedItem.itemId, payload);
+        quantity: Number(updateForm.quantity),
+        type: updateForm.reason === 'NHAP_THEM' ? 'IN' : 'OUT',
+        reason: updateForm.reason,
+        note: updateForm.note,
+        updated_by: user?.id
+      }
       
-      setIsUpdateModalOpen(false);
-      loadData(); 
+      const itemId = selectedMaterial.item_id || selectedMaterial.id;
+      
+      // Sử dụng đúng API updateStock của stockApi
+      await stockApi.updateStock(storeId, itemId, payload)
+      
+      setIsUpdateModalOpen(false)
+      fetchInventoryData()
     } catch (error) {
-      console.error("Lỗi cập nhật kho:", error);
-      alert("Cập nhật thất bại. Vui lòng kiểm tra lại!");
+      console.error("Lỗi cập nhật kho:", error)
     }
-  };
-
-  const handleSort = (key) => {
-    let direction = 'asc';
-    if (sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
-    }
-    setSortConfig({ key, direction });
-  };
-
-  // --- DATA PROCESSING (Lọc, Sắp xếp, Phân trang) ---
-  const processedData = useMemo(() => {
-    // 1. Filter
-    let filtered = stocks.filter(item => {
-      const matchName = item.Inventory?.name?.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      let matchStatus = true;
-      const minStock = item.Inventory?.min_stock || 0;
-      if (filterStatus === "OUT_OF_STOCK") matchStatus = item.quantity === 0;
-      if (filterStatus === "LOW_STOCK") matchStatus = item.quantity > 0 && item.quantity <= minStock;
-      if (filterStatus === "NORMAL") matchStatus = item.quantity > minStock;
-
-      return matchName && matchStatus;
-    });
-
-    // 2. Sort
-    filtered.sort((a, b) => {
-      if (sortConfig.key === 'name') {
-        const nameA = a.Inventory?.name || '';
-        const nameB = b.Inventory?.name || '';
-        return nameA.localeCompare(nameB) * (sortConfig.direction === 'asc' ? 1 : -1);
-      }
-      if (sortConfig.key === 'quantity') {
-        return (a.quantity - b.quantity) * (sortConfig.direction === 'asc' ? 1 : -1);
-      }
-      return 0;
-    });
-
-    return filtered;
-  }, [stocks, searchTerm, filterStatus, sortConfig]);
-
-  // 3. Pagination
-  const totalPages = Math.ceil(processedData.length / itemsPerPage);
-  const paginatedStocks = processedData.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  // --- RENDER HELPERS ---
-  const getSortIcon = (key) => {
-    if (sortConfig.key !== key) return <ArrowUpDown className="ml-2 h-4 w-4" />;
-    return sortConfig.direction === 'asc' ? <ArrowUp className="ml-2 h-4 w-4" /> : <ArrowDown className="ml-2 h-4 w-4" />;
-  };
-
-  const getStockStatus = (qty, minStock) => {
-    if (qty === 0) return <Badge variant="destructive">Hết hàng</Badge>;
-    if (qty <= (minStock || 0)) return <Badge className="bg-orange-500 hover:bg-orange-600 text-white">Sắp hết</Badge>;
-    return <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white">Ổn định</Badge>;
-  };
-
-  // Render thanh trạng thái mini
-  const renderProgressBar = (qty, minStock) => {
-    if (qty === 0) return null;
-    const safeStock = minStock > 0 ? minStock * 2 : 50; // Giả định mức tồn kho an toàn để vẽ bar
-    const percentage = Math.min((qty / safeStock) * 100, 100);
-    const colorClass = qty <= minStock ? 'bg-orange-500' : 'bg-emerald-500';
-    
-    return (
-      <div className="w-full bg-slate-100 rounded-full h-1.5 mt-2">
-        <div className={`${colorClass} h-1.5 rounded-full`} style={{ width: `${percentage}%` }}></div>
-      </div>
-    );
-  };
+  }
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Tồn Kho Thực Tế</h2>
-          <p className="text-slate-500">Quản lý và kiểm kê số lượng vật tư tại cửa hàng</p>
+          <h1 className="text-2xl font-bold text-slate-900">Quản lý kho vật tư</h1>
+          <p className="text-slate-500">Theo dõi số lượng và cập nhật trạng thái nguyên vật liệu</p>
         </div>
-        <div className="flex gap-2 w-full sm:w-auto">
-          <Button variant="outline" onClick={loadData} disabled={isLoading} className="flex-1 sm:flex-none">
-            <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            Làm mới
+        <div className="flex items-center gap-2">
+          <Button 
+            onClick={handleExportCSV}
+            variant="outline" 
+            className="flex gap-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+            disabled={filteredInventory.length === 0}
+          >
+            <FileSpreadsheet size={18} />
+            Xuất báo cáo CSV
           </Button>
-          <Button className="bg-[#0077b6] hover:bg-[#006699]">
-            <Download className="w-4 h-4 mr-2" />
-            Xuất báo cáo
+          <Button onClick={fetchInventoryData} variant="outline" size="icon">
+            <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
           </Button>
         </div>
       </div>
 
-      {/* Main Content */}
-      <Card>
-        <CardHeader className="pb-3 border-b">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <CardTitle>Danh sách vật tư ({processedData.length})</CardTitle>
-            
-            {/* Bộ lọc nâng cao */}
-            <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-              <div className="relative w-full sm:w-[250px]">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-slate-400" />
-                <Input 
-                  placeholder="Tìm tên vật tư..." 
-                  className="pl-8"
-                  value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    setCurrentPage(1); // Reset page khi tìm kiếm
-                  }}
-                />
-              </div>
-              <Select 
-                value={filterStatus} 
-                onValueChange={(value) => {
-                  setFilterStatus(value);
-                  setCurrentPage(1);
-                }}
-              >
-                <SelectTrigger className="w-full sm:w-[150px]">
-                  <Filter className="w-4 h-4 mr-2" />
-                  <SelectValue placeholder="Lọc trạng thái" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="border-none shadow-sm bg-white">
+          <CardContent className="p-6 flex items-center gap-4">
+            <div className="p-3 bg-blue-50 rounded-xl text-blue-600">
+              <Package size={24} />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-slate-500">Tổng mặt hàng</p>
+              <p className="text-2xl font-bold text-slate-900">{stats.totalItems}</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-none shadow-sm bg-white">
+          <CardContent className="p-6 flex items-center gap-4">
+            <div className="p-3 bg-orange-50 rounded-xl text-orange-600">
+              <AlertTriangle size={24} />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-slate-500">Sắp hết hàng</p>
+              <p className="text-2xl font-bold text-orange-600">{stats.lowStockItems}</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-none shadow-sm bg-white">
+          <CardContent className="p-6 flex items-center gap-4">
+            <div className="p-3 bg-rose-50 rounded-xl text-rose-600">
+              <TrendingDown size={24} />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-slate-500">Đã hết hàng</p>
+              <p className="text-2xl font-bold text-rose-600">{stats.outOfStockItems}</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="border-none shadow-sm overflow-hidden">
+        <CardHeader className="bg-white border-b py-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="relative w-full md:w-96">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <Input 
+                placeholder="Tìm kiếm tên vật tư..." 
+                className="pl-10 bg-slate-50 border-none"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="flex items-center gap-3">
+              <Select value={filterCategory} onValueChange={setFilterCategory}>
+                <SelectTrigger className="w-[180px] bg-slate-50 border-none capitalize">
+                  <SelectValue placeholder="Danh mục" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ALL">Tất cả</SelectItem>
-                  <SelectItem value="NORMAL">Ổn định</SelectItem>
-                  <SelectItem value="LOW_STOCK">Sắp hết</SelectItem>
-                  <SelectItem value="OUT_OF_STOCK">Hết hàng</SelectItem>
+                  {categories.map(cat => (
+                    <SelectItem key={cat} value={cat} className="capitalize">
+                      {cat === "all" ? "Tất cả danh mục" : cat}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
         </CardHeader>
-
-        <CardContent className="p-0">
-          {/* MOBILE VIEW (CARD LIST) */}
-          <div className="block md:hidden">
-            {paginatedStocks.length > 0 ? (
-              <div className="flex flex-col gap-3 p-4">
-                {paginatedStocks.map((item) => (
-                  <div key={item.item_id} className={`p-4 rounded-xl border ${item.quantity === 0 ? 'bg-red-50/50 border-red-100' : 'bg-white'}`}>
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <span className="text-xs text-slate-500 font-medium">#{item.item_id}</span>
-                        <h4 className="font-semibold text-slate-800 leading-tight mt-1">{item.Inventory?.name || 'N/A'}</h4>
-                      </div>
-                      {getStockStatus(item.quantity, item.Inventory?.min_stock)}
-                    </div>
-                    
-                    <div className="flex justify-between items-end mt-4">
-                      <div>
-                        <p className="text-xs text-slate-500 mb-1">Tồn kho hiện tại</p>
-                        <p className="text-xl font-bold">
-                          {item.quantity} <span className="text-sm font-normal text-slate-500">{item.Inventory?.unit}</span>
-                        </p>
-                      </div>
-                      <Button 
-                        size="sm"
-                        variant={item.quantity === 0 ? "destructive" : "secondary"}
-                        onClick={() => openUpdateModal(storeId, item.item_id, item.quantity)}
-                      >
-                        <ClipboardList className="w-4 h-4 mr-1" /> Cập nhật
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="p-8 text-center text-slate-500">Không tìm thấy vật tư nào.</div>
-            )}
-          </div>
-
-          {/* DESKTOP VIEW (TABLE) */}
-          <div className="hidden md:block">
+        <CardContent className="p-0 bg-white">
+          <div className="overflow-x-auto">
             <Table>
-              <TableHeader className="bg-slate-50">
-                <TableRow>
-                  <TableHead className="w-[100px]">Mã</TableHead>
-                  <TableHead 
-                    className="cursor-pointer hover:bg-slate-100 transition-colors"
-                    onClick={() => handleSort('name')}
-                  >
-                    <div className="flex items-center">Tên mặt hàng {getSortIcon('name')}</div>
+              <TableHeader>
+                <TableRow className="bg-slate-50/50 hover:bg-slate-50/50">
+                  <TableHead className="w-12 text-center">STT</TableHead>
+                  <TableHead onClick={() => requestSort('name')} className="cursor-pointer group">
+                    <div className="flex items-center gap-1">
+                      Tên vật tư
+                      <ArrowUpDown size={14} className="text-slate-300 group-hover:text-slate-600" />
+                    </div>
                   </TableHead>
                   <TableHead>Danh mục</TableHead>
-                  <TableHead 
-                    className="text-right cursor-pointer hover:bg-slate-100 transition-colors"
-                    onClick={() => handleSort('quantity')}
-                  >
-                    <div className="flex items-center justify-end">Tồn kho {getSortIcon('quantity')}</div>
+                  <TableHead onClick={() => requestSort('quantity')} className="text-right cursor-pointer group">
+                    <div className="flex items-center justify-end gap-1">
+                      Số lượng
+                      <ArrowUpDown size={14} className="text-slate-300 group-hover:text-slate-600" />
+                    </div>
                   </TableHead>
+                  <TableHead className="text-center">Đơn vị</TableHead>
                   <TableHead className="text-center">Trạng thái</TableHead>
-                  <TableHead>Cập nhật lần cuối</TableHead>
-                  <TableHead className="text-right">Thao tác</TableHead>
+                  <TableHead className="text-right">Cập nhật cuối</TableHead>
+                  <TableHead className="w-20 text-center">Thao tác</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedStocks.length > 0 ? (
-                  paginatedStocks.map((item) => (
-                    <TableRow 
-                      key={item.item_id} 
-                      className={item.quantity === 0 ? "bg-red-50/40 hover:bg-red-50/60" : ""}
-                    >
-                      <TableCell className="font-medium text-slate-500">#{item.item_id}</TableCell>
-                      <TableCell className="font-semibold text-slate-800">
-                        {item.Inventory?.name || 'N/A'}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="bg-white">
-                          {item.Inventory?.category || 'Chưa phân loại'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex flex-col items-end">
-                          <span className="font-bold text-lg">
-                            {item.quantity} <span className="text-sm font-normal text-slate-400">{item.Inventory?.unit}</span>
-                          </span>
-                          {renderProgressBar(item.quantity, item.Inventory?.min_stock)}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {getStockStatus(item.quantity, item.Inventory?.min_stock)}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span className="text-sm font-medium">{item.updatedBy?.full_name || 'Hệ thống'}</span>
-                          <span className="text-xs text-slate-400 flex items-center mt-1">
-                            <Clock className="w-3 h-3 mr-1"/> Gần đây
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button 
-                          variant={item.quantity === 0 ? "destructive" : "ghost"}
-                          size="sm"
-                          onClick={() => openUpdateModal(storeId, item.item_id, item.quantity)}
-                        >
-                          <ClipboardList className="w-4 h-4 mr-2" />
-                          Kiểm kê
-                        </Button>
-                      </TableCell>
+                {loading ? (
+                  [...Array(5)].map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell colSpan={8} className="h-16 animate-pulse bg-slate-50/50" />
                     </TableRow>
                   ))
+                ) : filteredInventory.length > 0 ? (
+                  filteredInventory.map((item, index) => {
+                    const currentStock = getStockValue(item)
+                    const minStock = getItemMinStock(item)
+                    const itemName = getItemName(item)
+                    const category = getItemCategory(item)
+                    const unit = getItemUnit(item)
+                    const isLow = currentStock <= minStock && currentStock > 0
+                    const isOut = currentStock <= 0
+                    
+                    return (
+                      <TableRow key={item.item_id || item.id || index} className="hover:bg-slate-50/50 transition-colors">
+                        <TableCell className="text-center text-slate-500 font-medium">{index + 1}</TableCell>
+                        <TableCell className="font-semibold text-slate-700">{itemName}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-200 capitalize">
+                            {category}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className={`text-right font-bold ${isOut ? 'text-rose-600' : isLow ? 'text-orange-600' : 'text-slate-900'}`}>
+                          {currentStock}
+                        </TableCell>
+                        <TableCell className="text-center text-slate-600">{unit}</TableCell>
+                        <TableCell className="text-center">
+                          {isOut ? (
+                            <Badge className="bg-rose-100 text-rose-700 border-rose-200 hover:bg-rose-100">Hết hàng</Badge>
+                          ) : isLow ? (
+                            <Badge className="bg-orange-100 text-orange-700 border-orange-200 hover:bg-orange-100">Sắp hết</Badge>
+                          ) : (
+                            <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-100">Đủ hàng</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right text-slate-500 text-sm">
+                          <div className="flex items-center justify-end gap-1">
+                            <Clock size={12} />
+                            {new Date(item.updated_at || Date.now()).toLocaleDateString('vi-VN')}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            onClick={() => handleOpenUpdate(item)}
+                          >
+                            <Plus size={18} />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={7} className="h-32 text-center text-slate-500">
-                      <div className="flex flex-col items-center justify-center">
-                        <Search className="h-8 w-8 text-slate-300 mb-2" />
-                        <p>Không tìm thấy vật tư nào phù hợp với bộ lọc.</p>
-                      </div>
+                    <TableCell colSpan={8} className="h-40 text-center text-slate-400">
+                      Không tìm thấy vật tư nào phù hợp
                     </TableCell>
                   </TableRow>
                 )}
               </TableBody>
             </Table>
           </div>
-
-          {/* Pagination Controls */}
-          {totalPages > 1 && (
-            <div className="border-t p-4 flex items-center justify-center bg-white rounded-b-xl">
-              <Pagination>
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious 
-                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                      className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                    />
-                  </PaginationItem>
-                  
-                  {/* Render page numbers (Simplified for demo) */}
-                  {[...Array(totalPages)].map((_, i) => (
-                    <PaginationItem key={i}>
-                      <PaginationLink 
-                        isActive={currentPage === i + 1}
-                        onClick={() => setCurrentPage(i + 1)}
-                        className="cursor-pointer"
-                      >
-                        {i + 1}
-                      </PaginationLink>
-                    </PaginationItem>
-                  ))}
-
-                  <PaginationItem>
-                    <PaginationNext 
-                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                      className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-            </div>
-          )}
         </CardContent>
       </Card>
 
-      {/* --- MODAL CẬP NHẬT (KIỂM KÊ) --- */}
-      {/* Giữ nguyên như bản gốc của bạn */}
       <Dialog open={isUpdateModalOpen} onOpenChange={setIsUpdateModalOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Cập nhật số lượng kho</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <ClipboardList className="text-blue-600" />
+              Cập nhật kho: {selectedMaterial ? getItemName(selectedMaterial) : ""}
+            </DialogTitle>
             <DialogDescription>
-              Điều chỉnh số lượng thực tế trong kho. Vui lòng chọn thao tác để hệ thống lưu vết.
+              Thay đổi số lượng tồn kho thủ công. Lưu ý chọn đúng lý do cập nhật.
             </DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <label className="text-right text-sm font-medium">
-                Số lượng mới <span className="text-red-500">*</span>
-              </label>
-              <Input 
-                type="number"
-                min="0"
-                value={updateForm.quantity}
-                onChange={(e) => setUpdateForm({...updateForm, quantity: e.target.value})}
-                className="col-span-3 text-lg font-bold"
-              />
+              <label className="text-right text-sm font-medium">Số lượng</label>
+              <div className="col-span-3 flex items-center gap-2">
+                <Input 
+                  type="number" 
+                  value={updateForm.quantity}
+                  onChange={(e) => setUpdateForm({...updateForm, quantity: e.target.value})}
+                  className="bg-slate-50"
+                  placeholder="Nhập con số..."
+                />
+                <span className="text-sm text-slate-500 font-medium w-16">
+                  {selectedMaterial ? getItemUnit(selectedMaterial) : ""}
+                </span>
+              </div>
             </div>
 
-            <div className="grid grid-cols-4 items-start gap-4 mt-2">
-              <label className="text-right text-sm font-medium mt-2">Thao tác</label>
-              <div className="col-span-3 grid grid-cols-2 gap-2">
-                {[
-                  { id: 'KIEM_KE', label: 'Kiểm kê thực tế', color: 'border-blue-200 hover:border-blue-500 hover:bg-blue-50', icon: '📝' },
-                  { id: 'NHAP_THEM', label: 'Nhập (Ngoài HT)', color: 'border-emerald-200 hover:border-emerald-500 hover:bg-emerald-50', icon: '📦' },
-                  { id: 'HUY_HANG', label: 'Hủy/Hỏng/Hết hạn', color: 'border-rose-200 hover:border-rose-500 hover:bg-rose-50', icon: '🗑️' },
-                  { id: 'XUAT_DUNG', label: 'Xuất dùng nội bộ', color: 'border-orange-200 hover:border-orange-500 hover:bg-orange-50', icon: '🛠️' },
-                ].map((action) => (
-                  <div
-                    key={action.id}
-                    onClick={() => setUpdateForm({ ...updateForm, reason: action.id })}
-                    className={`flex items-center gap-2 p-2 border rounded-md cursor-pointer transition-all ${
-                      updateForm.reason === action.id 
-                        ? action.color.replace('hover:', '').replace('border-', 'border-2 border-') 
-                        : 'border-slate-200 bg-white opacity-70'
-                    }`}
-                  >
-                    <span>{action.icon}</span>
-                    <span className="text-xs font-medium text-slate-700">{action.label}</span>
-                  </div>
-                ))}
-              </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label className="text-right text-sm font-medium">Lý do</label>
+              <Select 
+                value={updateForm.reason} 
+                onValueChange={(val) => setUpdateForm({...updateForm, reason: val})}
+              >
+                <SelectTrigger className="col-span-3 bg-slate-50">
+                  <SelectValue placeholder="Chọn lý do..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="HUY_HANG">Hủy hàng (Hỏng/Hết hạn)</SelectItem>
+                  <SelectItem value="NHAP_THEM">Nhập thêm ngoài hệ thống</SelectItem>
+                  <SelectItem value="KIEM_KHO">Điều chỉnh sau kiểm kê</SelectItem>
+                  <SelectItem value="TRA_HANG">Trả hàng nhà cung cấp</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-4 items-start gap-4">
+              <label className="text-right text-sm font-medium mt-2">Ghi chú</label>
+              <textarea 
+                className="col-span-3 min-h-[80px] p-2 text-sm bg-slate-50 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                placeholder="Nhập chi tiết nếu cần..."
+                value={updateForm.note}
+                onChange={(e) => setUpdateForm({...updateForm, note: e.target.value})}
+              />
             </div>
 
             {updateForm.reason === 'HUY_HANG' && (
@@ -483,16 +467,14 @@ const InventoryDashboard = () => {
             <Button variant="outline" onClick={() => setIsUpdateModalOpen(false)}>Hủy bỏ</Button>
             <Button 
               onClick={handleUpdateStock}
-              disabled={!updateForm.reason} 
+              disabled={!updateForm.reason || !updateForm.quantity} 
               className={`text-white transition-colors ${
                 updateForm.reason === 'HUY_HANG' ? 'bg-rose-600 hover:bg-rose-700' : 
                 updateForm.reason === 'NHAP_THEM' ? 'bg-emerald-600 hover:bg-emerald-700' : 
                 'bg-slate-900 hover:bg-slate-800'
               }`}
             >
-              {updateForm.reason === 'HUY_HANG' ? 'Xác nhận Hủy' : 
-               updateForm.reason === 'NHAP_THEM' ? 'Xác nhận Nhập' : 
-               'Cập nhật số lượng'}
+              Xác nhận cập nhật
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -501,4 +483,4 @@ const InventoryDashboard = () => {
   )
 }
 
-export default InventoryDashboard
+export default InventoryDashboard;

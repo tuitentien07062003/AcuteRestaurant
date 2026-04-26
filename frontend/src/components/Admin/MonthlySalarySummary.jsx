@@ -1,166 +1,200 @@
-import { useMonthlySalarySummary } from '@/hooks/useMonthlySalarySummary';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { AlertCircle } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
-import { formatHours, formatCurrency } from '@/lib/formatters';
+import { useState, useMemo, useContext } from "react"
+import { 
+  Clock, 
+  Users, 
+  DollarSign,
+  Search,
+  FileSpreadsheet
+} from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useMonthlySalarySummary } from '@/hooks/useMonthlySalarySummary'
+import { formatHours, formatCurrency } from '@/lib/formatters'
+import { GlobalContext } from "@/context/GlobalContext"
 
-/**
- * Component hiển thị tóm tắt lương toàn bộ nhân viên trong tháng
- */
-export function MonthlySalarySummary({ month, year, storeId }) {
-  const { data: summary, isLoading, error } = useMonthlySalarySummary(month, year, storeId);
+export const MonthlySalarySummary = () => {
+  const [searchTerm, setSearchTerm] = useState("")
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1)
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
 
-  if (isLoading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Tóm tắt lương tháng</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-12 w-full" />
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    );
+  const { user } = useContext(GlobalContext)
+  const storeId = user?.store_id || 7062003
+
+  const { 
+    data: monthlyData, 
+    isLoading, 
+    error 
+  } = useMonthlySalarySummary(selectedMonth, selectedYear, storeId)
+
+  const stats = useMemo(() => {
+    if (!monthlyData) return { totalHours: 0, totalSalary: 0, employeeCount: 0 }
+    
+    return {
+      totalHours: parseFloat(monthlyData.totalHours) || 0,
+      totalSalary: parseFloat(monthlyData.totalSalary) || 0,
+      employeeCount: monthlyData.employeeCount || 0,
+    }
+  }, [monthlyData])
+
+  const handleExportExcel = () => {
+    if (!monthlyData?.employeeDetails) return
+
+    const headers = ["STT", "Nhân viên", "Loại hình", "Tổng giờ làm", "Lương/Giờ", "Thành tiền"]
+    const rows = monthlyData.employeeDetails.map((emp, index) => [
+      index + 1,
+      emp.employeeName || 'Không rõ',
+      emp.type === 'full-time' ? 'Full-time' : 'Part-time',
+      emp.totalHours,
+      emp.hourlyRate,
+      emp.salary
+    ])
+
+    const csvContent = "\uFEFF" + [headers, ...rows].map(e => e.join(",")).join("\n")
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement("a")
+    link.href = URL.createObjectURL(blob)
+    link.download = `Bang_Luong_Thang_${selectedMonth}_${selectedYear}.csv`
+    link.click()
   }
 
-  if (error) {
-    return (
-      <Card className="border-red-200 bg-red-50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-red-700">
-            <AlertCircle size={18} />
-            Lỗi tải dữ liệu
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-red-600">{error.message}</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!summary) return null;
-
-  const formatCurrency = (value) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-      minimumFractionDigits: 0,
-    }).format(value || 0);
-  };
-
-  const getStatusBadge = (status) => {
-    const statusMap = {
-      'OPEN': { label: 'Mở', className: 'bg-blue-100 text-blue-700' },
-      'CALCULATED': { label: 'Đã tính', className: 'bg-yellow-100 text-yellow-700' },
-      'SENT': { label: 'Đã gửi', className: 'bg-purple-100 text-purple-700' },
-      'APPROVED': { label: 'Đã duyệt', className: 'bg-green-100 text-green-700' },
-    };
-    const statusInfo = statusMap[status] || { label: status, className: 'bg-gray-100 text-gray-700' };
-    return <Badge className={statusInfo.className}>{statusInfo.label}</Badge>;
-  };
+  const filteredEmployees = monthlyData?.employeeDetails?.filter(emp => 
+    (emp.employeeName || '').toLowerCase().includes(searchTerm.toLowerCase())
+  ) || []
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>Tóm tắt lương tháng {month}/{year}</CardTitle>
-            <p className="text-sm text-gray-500 mt-2">Trạng thái: {getStatusBadge(summary.status)}</p>
-          </div>
-        </div>
-      </CardHeader>
+    <div className="p-6 space-y-6 bg-gray-50/50 min-h-screen">
 
-      <CardContent className="space-y-6">
-        {/* Summary Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-            <p className="text-sm text-gray-600">Tổng lương</p>
-            <p className="text-2xl font-bold text-green-700 mt-2">
-              {formatCurrency(parseFloat(summary.totalSalary))}
-            </p>
-            <p className="text-xs text-gray-500 mt-1">Full-time + Part-time</p>
-          </div>
+      <div className="flex flex-wrap gap-3 items-center justify-between">
+        <div className="flex gap-2">
+          <select
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(Number(e.target.value))}
+            className="border rounded-lg px-3 py-2"
+          >
+            {Array.from({ length: 12 }, (_, i) => (
+              <option key={i+1} value={i+1}>Tháng {i+1}</option>
+            ))}
+          </select>
 
-          <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <p className="text-sm text-gray-600">Lương part-time</p>
-            <p className="text-2xl font-bold text-blue-700 mt-2">
-              {formatCurrency(parseFloat(summary.partTimeSalary))}
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              {summary.partTimeCount} nhân viên
-            </p>
-          </div>
-
-          <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
-            <p className="text-sm text-gray-600">Nhân viên full-time</p>
-            <p className="text-2xl font-bold text-purple-700 mt-2">
-              {summary.fullTimeCount}
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              Tổng {summary.fullTimeCount + summary.partTimeCount} nhân viên
-            </p>
-          </div>
+          <select
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(Number(e.target.value))}
+            className="border rounded-lg px-3 py-2"
+          >
+            {Array.from({ length: 5 }, (_, i) => {
+              const year = new Date().getFullYear() - 2 + i
+              return <option key={year} value={year}>{year}</option>
+            })}
+          </select>
         </div>
 
-        {/* Employee Details Table */}
-        <div>
-          <h4 className="font-semibold mb-3">Chi tiết lương từng nhân viên</h4>
-          <div className="rounded-lg border overflow-x-auto">
-            <Table>
-              <TableHeader className="bg-gray-50">
-                <TableRow>
-                  <TableHead className="w-12">STT</TableHead>
-                  <TableHead>Tên nhân viên</TableHead>
-                  <TableHead>Loại</TableHead>
-                  <TableHead>Tổng giờ</TableHead>
-                  <TableHead>Lương/giờ</TableHead>
-                  <TableHead>Lương</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {summary.employeeDetails.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan="6" className="text-center py-6 text-gray-500">
-                      Chưa tính lương nhân viên
-                    </TableCell>
+        <Button onClick={handleExportExcel} className="flex items-center gap-2">
+          <FileSpreadsheet className="h-4 w-4" />
+          Xuất Excel
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="border-none shadow-sm bg-gradient-to-br from-blue-600 to-blue-700 text-white">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-start opacity-90">
+              <p className="text-sm font-medium">Tổng giờ làm</p>
+              <Clock className="h-5 w-5" />
+            </div>
+            <h3 className="text-3xl font-bold mt-2">
+              {isLoading ? <Skeleton className="h-8 w-20 bg-blue-400" /> : formatHours(stats.totalHours)}
+            </h3>
+          </CardContent>
+        </Card>
+
+        <Card className="border-none shadow-sm">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-start">
+              <p className="text-gray-500 text-sm font-medium">Tổng lương</p>
+              <DollarSign className="h-5 w-5 text-green-600" />
+            </div>
+            <h3 className="text-2xl font-bold mt-2 text-gray-800">
+              {isLoading ? <Skeleton className="h-8 w-32" /> : formatCurrency(stats.totalSalary)}
+            </h3>
+          </CardContent>
+        </Card>
+
+        <Card className="border-none shadow-sm">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-start">
+              <p className="text-gray-500 text-sm font-medium">Nhân viên</p>
+              <Users className="h-5 w-5 text-purple-600" />
+            </div>
+            <h3 className="text-2xl font-bold mt-2 text-gray-800">
+              {isLoading ? <Skeleton className="h-8 w-12" /> : stats.employeeCount}
+            </h3>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Search className="h-4 w-4 text-gray-400" />
+        <Input
+          placeholder="Tìm nhân viên..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="max-w-sm"
+        />
+      </div>
+
+      <Card>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>STT</TableHead>
+                <TableHead>Nhân viên</TableHead>
+                <TableHead>Loại</TableHead>
+                <TableHead>Giờ làm</TableHead>
+                <TableHead>Lương/Giờ</TableHead>
+                <TableHead>Thành tiền</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                [...Array(5)].map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell colSpan={6}><Skeleton className="h-6 w-full" /></TableCell>
                   </TableRow>
-                ) : (
-                  summary.employeeDetails.map((employee, index) => (
-                    <TableRow key={employee.id} className="hover:bg-gray-50">
-                      <TableCell className="text-sm font-medium">{index + 1}</TableCell>
-                      <TableCell className="font-medium">{employee.employeeName}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={employee.type === 'full-time' ? 'bg-purple-50' : 'bg-blue-50'}>
-                          {employee.type === 'full-time' ? 'Full-time' : 'Part-time'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-sm">{formatHours(employee.totalHours)}</TableCell>
-                      <TableCell className="text-sm">{formatCurrency(parseFloat(employee.hourlyRate))}</TableCell>
-                      <TableCell className="font-bold text-green-600">
-                        {formatCurrency(parseFloat(employee.salary))}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
+                ))
+              ) : filteredEmployees.length > 0 ? (
+                filteredEmployees.map((emp, index) => (
+                  <TableRow key={index}>
+                    <TableCell>{index + 1}</TableCell>
+                    <TableCell>{emp.employeeName}</TableCell>
+                    <TableCell>{emp.type}</TableCell>
+                    <TableCell>{emp.totalHours}</TableCell>
+                    <TableCell>{formatCurrency(emp.hourlyRate)}</TableCell>
+                    <TableCell>{formatCurrency(emp.salary)}</TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-6 text-gray-400">
+                    Không có dữ liệu
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+    </div>
+  )
 }

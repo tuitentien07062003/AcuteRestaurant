@@ -153,12 +153,7 @@ export const getDailySalarySummary = async (req, res) => {
       return res.json(cached);
     }
 
-    // Tìm timesheets của ngày hôm nay
-    const startDate = new Date(date);
-    startDate.setHours(0, 0, 0, 0);
-    const endDate = new Date(date);
-    endDate.setHours(23, 59, 59, 999);
-
+    // Convert timezone để query đúng ngày
     const timesheets = await sequelize.query(`
       SELECT 
         t.employee_id,
@@ -174,7 +169,8 @@ export const getDailySalarySummary = async (req, res) => {
         MAX(CASE WHEN t.check_out IS NOT NULL THEN t.check_out ELSE NULL END) as last_check_out
       FROM timesheet t
       JOIN employee e ON t.employee_id = e.id
-      WHERE DATE(t.work_day) = DATE(:date) AND e.active = true
+      WHERE DATE(t.work_day) = DATE(:date)
+        AND e.active = true
       GROUP BY t.employee_id, e.id, e.full_name, e.hourly_rate, e.type, e.role
       ORDER BY e.full_name
     `, {
@@ -182,7 +178,7 @@ export const getDailySalarySummary = async (req, res) => {
       type: sequelize.QueryTypes.SELECT
     });
 
-    // Lấy dữ liệu doanh thu ngày hôm nay
+    // Lấy dữ liệu doanh thu
     const salesData = await SalesSummary.findOne({
       where: { store_id, sales_date: date },
       attributes: ['net_sales', 'labor_percent', 'labor_cost']
@@ -195,7 +191,7 @@ export const getDailySalarySummary = async (req, res) => {
       .reduce((sum, t) => sum + (parseFloat(t.estimated_salary) || 0), 0);
 
     const netSales = parseFloat(salesData?.net_sales) || 0;
-    const laborPercent = parseFloat(salesData?.labor_percent) || 10; // Default 10% nếu không có
+    const laborPercent = parseFloat(salesData?.labor_percent) || 10;
     const expectedLaborCost = (netSales * laborPercent) / 100;
 
     const actualPercent = netSales > 0 ? ((totalPartTimeSalary / netSales) * 100).toFixed(2) : 0;
@@ -223,7 +219,7 @@ export const getDailySalarySummary = async (req, res) => {
   }
 };
 
-// Lấy danh sách timesheets nhân viên part-time trong ngày (auto-update mỗi 30 phút)
+// Lấy danh sách timesheets nhân viên part-time trong ngày
 export const getEmployeeDayTimesheets = async (req, res) => {
   try {
     const { date, store_id, page = 1, limit = 20 } = req.query;
@@ -231,9 +227,6 @@ export const getEmployeeDayTimesheets = async (req, res) => {
     if (!date || !store_id) {
       return res.status(400).json({ message: "Thiếu date hoặc store_id" });
     }
-
-    // Kiểm tra cache (tính năng pagination không cache)
-    // Vì pagination thay đổi, nên chỉ cache page 1 hoặc bỏ qua
     
     const offset = (parseInt(page) - 1) * parseInt(limit);
 
@@ -252,7 +245,9 @@ export const getEmployeeDayTimesheets = async (req, res) => {
         CASE WHEN t.check_out IS NOT NULL THEN (t.total_hours * e.hourly_rate) ELSE NULL END as daily_salary
       FROM timesheet t
       JOIN employee e ON t.employee_id = e.id
-      WHERE DATE(t.work_day) = DATE(:date) AND e.type = 'part-time' AND e.active = true
+      WHERE DATE(t.work_day) = DATE(:date)
+        AND e.type = 'part-time' 
+        AND e.active = true
       ORDER BY t.check_in DESC
       LIMIT :limit OFFSET :offset
     `, {
@@ -264,7 +259,9 @@ export const getEmployeeDayTimesheets = async (req, res) => {
       SELECT COUNT(*) as count
       FROM timesheet t
       JOIN employee e ON t.employee_id = e.id
-      WHERE DATE(t.work_day) = DATE(:date) AND e.type = 'part-time' AND e.active = true
+      WHERE DATE(t.work_day) = DATE(:date)
+        AND e.type = 'part-time' 
+        AND e.active = true
     `, {
       replacements: { date },
       type: sequelize.QueryTypes.SELECT
@@ -310,10 +307,9 @@ export const getMonthlySalarySummary = async (req, res) => {
       }
     } catch (cacheError) {
       console.warn('Cache read error:', cacheError);
-      // Tiếp tục mà không dùng cache
     }
 
-    // Lấy payroll record của tháng (nếu có)
+    // Lấy payroll record
     const payroll = await Payroll.findOne({
       where: { month, year, store_id },
       include: [{
@@ -325,24 +321,48 @@ export const getMonthlySalarySummary = async (req, res) => {
 
     if (payroll) {
       console.log('Found existing payroll record');
-      // Nếu có payroll record, trả về dữ liệu từ đó
-      const totalSalary = payroll.details.reduce((sum, d) => sum + (parseFloat(d.salary) || 0), 0);
-      const totalPartTimeSalary = payroll.details
-        .filter(d => !d.is_fulltime)
-        .reduce((sum, d) => sum + (parseFloat(d.salary) || 0), 0);
-      const fullTimeCount = payroll.details.filter(d => d.is_fulltime).length;
-      const partTimeCount = payroll.details.filter(d => !d.is_fulltime).length;
+      
+      // Lọc chỉ lấy part-time
+      const partTimeDetails = payroll.details.filter(d => !d.is_fulltime);
+      const partTimeTotalHours = partTimeDetails.reduce((sum, d) => sum + (parseFloat(d.total_hours) || 0), 0);
+      const partTimeTotalSalary = partTimeDetails.reduce((sum, d) => sum + (parseFloat(d.salary) || 0), 0);
+      const employeeCount = partTimeDetails.length;
+
+      // Lấy doanh thu tháng từ SalesSummary
+      const startDate = new Date(year, month - 1, 1);
+      const endDate = new Date(year, month, 0);
+      
+      const salesData = await sequelize.query(`
+        SELECT 
+          COALESCE(SUM(net_sales), 0) as total_revenue,
+          COALESCE(AVG(labor_percent), 10) as labor_percent
+        FROM sales_summary
+        WHERE store_id = :storeId 
+          AND sales_date >= DATE(:startDate)
+          AND sales_date <= DATE(:endDate)
+      `, {
+        replacements: { startDate, endDate, storeId: store_id },
+        type: sequelize.QueryTypes.SELECT
+      });
+
+      const totalRevenue = parseFloat(salesData[0]?.total_revenue) || 0;
+      const expectedLaborPercent = parseFloat(salesData[0]?.labor_percent) || 10;
+      const laborPercent = totalRevenue > 0 ? ((partTimeTotalSalary / totalRevenue) * 100).toFixed(2) : 0;
 
       const result = {
         payrollId: payroll.id,
         month: payroll.month,
         year: payroll.year,
         status: payroll.status,
-        totalSalary: parseFloat(totalSalary).toFixed(2),
-        partTimeSalary: parseFloat(totalPartTimeSalary).toFixed(2),
-        fullTimeCount,
-        partTimeCount,
-        employeeDetails: payroll.details.map(d => ({
+        totalHours: partTimeTotalHours.toFixed(2),
+        totalSalary: partTimeTotalSalary.toFixed(2),
+        partTimeTotalHours: partTimeTotalHours.toFixed(2),
+        partTimeSalary: partTimeTotalSalary.toFixed(2),
+        employeeCount,
+        totalRevenue: totalRevenue.toFixed(2),
+        laborPercent,
+        expectedLaborPercent,
+        employeeDetails: partTimeDetails.map(d => ({
           id: d.id,
           employeeId: d.employee_id,
           employeeName: d.employee?.full_name,
@@ -357,16 +377,21 @@ export const getMonthlySalarySummary = async (req, res) => {
       return res.json(result);
     }
 
-    // Nếu chưa có payroll record, tự động tính toán từ dữ liệu timesheet
+    // Tính toán từ timesheet
     console.log('No payroll record found, calculating from timesheet data');
 
-    const startDate = new Date(year, month - 1, 1); // Ngày đầu tháng (month - 1 vì JS Date month bắt đầu từ 0)
-    const endDate = new Date(year, month, 0); // Ngày cuối tháng (0 của tháng tiếp theo = ngày cuối tháng trước)
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0);
 
-    console.log('Querying data for:', { startDate: startDate.toISOString().split('T')[0], endDate: endDate.toISOString().split('T')[0], storeId: store_id });
+    console.log('Querying data for:', { 
+      startDate: startDate.toISOString().split('T')[0], 
+      endDate: endDate.toISOString().split('T')[0], 
+      storeId: store_id 
+    });
 
     try {
-      const employeeData = await sequelize.query(`
+      // Lấy dữ liệu nhân viên part-time
+      const partTimeData = await sequelize.query(`
         SELECT
           e.id as employee_id,
           e.full_name,
@@ -379,7 +404,7 @@ export const getMonthlySalarySummary = async (req, res) => {
         LEFT JOIN timesheet t ON e.id = t.employee_id
           AND DATE(t.work_day) >= DATE(:startDate)
           AND DATE(t.work_day) <= DATE(:endDate)
-        WHERE e.active = true AND e.store_id = :storeId
+        WHERE e.active = true AND e.store_id = :storeId AND e.type = 'part-time'
         GROUP BY e.id, e.full_name, e.type, e.hourly_rate, e.role
         HAVING COALESCE(SUM(CASE WHEN t.check_out IS NOT NULL THEN t.total_hours ELSE 0 END), 0) > 0
         ORDER BY e.full_name
@@ -388,59 +413,73 @@ export const getMonthlySalarySummary = async (req, res) => {
         type: sequelize.QueryTypes.SELECT
       });
 
-      // Nếu không có dữ liệu, trả về response rỗng thay vì lỗi
-    if (!employeeData || employeeData.length === 0) {
-      console.log('No employee data found, returning empty result');
-      const emptyResult = {
+      // Lấy dữ liệu doanh thu tháng từ SalesSummary
+      const salesData = await sequelize.query(`
+        SELECT 
+          COALESCE(SUM(net_sales), 0) as total_revenue,
+          COALESCE(AVG(labor_percent), 10) as labor_percent
+        FROM sales_summary
+        WHERE store_id = :storeId 
+          AND sales_date >= DATE(:startDate)
+          AND sales_date <= DATE(:endDate)
+      `, {
+        replacements: { startDate, endDate, storeId: store_id },
+        type: sequelize.QueryTypes.SELECT
+      });
+
+      const totalRevenue = parseFloat(salesData[0]?.total_revenue) || 0;
+      const expectedLaborPercent = parseFloat(salesData[0]?.labor_percent) || 10;
+
+      // Tính tổng part-time
+      const partTimeTotalHours = partTimeData.reduce((sum, emp) => sum + (parseFloat(emp.total_hours) || 0), 0);
+      const partTimeTotalSalary = partTimeData.reduce((sum, emp) => sum + (parseFloat(emp.total_salary) || 0), 0);
+
+      // Tính % chi phí lương / doanh thu
+      const laborPercent = totalRevenue > 0 ? ((partTimeTotalSalary / totalRevenue) * 100).toFixed(2) : 0;
+
+      if (!partTimeData || partTimeData.length === 0) {
+        console.log('No part-time employee data found, returning empty result');
+        const emptyResult = {
+          payrollId: null,
+          month: parseInt(month),
+          year: parseInt(year),
+          status: 'CALCULATED',
+          totalHours: '0.00',
+          totalSalary: '0.00',
+          partTimeTotalHours: '0.00',
+          partTimeSalary: '0.00',
+          employeeCount: 0,
+          totalRevenue: '0.00',
+          laborPercent: '0.00',
+          expectedLaborPercent,
+          employeeDetails: []
+        };
+        try {
+          await payrollCacheService.setMonthlySummary(store_id, month, year, emptyResult);
+        } catch (cacheError) {
+          console.warn('Cache write error for empty result:', cacheError);
+        }
+        return res.json(emptyResult);
+      }
+
+      const result = {
         payrollId: null,
         month: parseInt(month),
         year: parseInt(year),
         status: 'CALCULATED',
-        totalSalary: '0.00',
-        partTimeSalary: '0.00',
-        fullTimeCount: 0,
-        partTimeCount: 0,
-        employeeDetails: []
-      };
-      try {
-        await payrollCacheService.setMonthlySummary(store_id, month, year, emptyResult);
-      } catch (cacheError) {
-        console.warn('Cache write error for empty result:', cacheError);
-      }
-      return res.json(emptyResult);
-    }
-
-    try {
-      // Tính tổng với safety checks
-      const totalSalary = employeeData.reduce((sum, emp) => {
-        const salary = parseFloat(emp.total_salary) || 0;
-        return sum + salary;
-      }, 0);
-
-      const totalPartTimeSalary = employeeData
-        .filter(emp => emp.type === 'part-time')
-        .reduce((sum, emp) => {
-          const salary = parseFloat(emp.total_salary) || 0;
-          return sum + salary;
-        }, 0);
-
-      const fullTimeCount = employeeData.filter(emp => emp.type === 'full-time').length;
-      const partTimeCount = employeeData.filter(emp => emp.type === 'part-time').length;
-
-      const result = {
-        payrollId: null, // Chưa có payroll record
-        month: parseInt(month),
-        year: parseInt(year),
-        status: 'CALCULATED', // Tự động tính toán
-        totalSalary: totalSalary.toFixed(2),
-        partTimeSalary: totalPartTimeSalary.toFixed(2),
-        fullTimeCount,
-        partTimeCount,
-        employeeDetails: employeeData.map(emp => ({
-          id: null, // Chưa có payroll detail record
+        totalHours: partTimeTotalHours.toFixed(2),
+        totalSalary: partTimeTotalSalary.toFixed(2),
+        partTimeTotalHours: partTimeTotalHours.toFixed(2),
+        partTimeSalary: partTimeTotalSalary.toFixed(2),
+        employeeCount: partTimeData.length,
+        totalRevenue: totalRevenue.toFixed(2),
+        laborPercent: laborPercent,
+        expectedLaborPercent,
+        employeeDetails: partTimeData.map(emp => ({
+          id: null,
           employeeId: emp.employee_id,
           employeeName: emp.full_name || 'Unknown',
-          type: emp.type || 'unknown',
+          type: emp.type || 'part-time',
           totalHours: (parseFloat(emp.total_hours) || 0).toFixed(2),
           hourlyRate: (parseFloat(emp.hourly_rate) || 0).toFixed(2),
           salary: (parseFloat(emp.total_salary) || 0).toFixed(2)
@@ -452,32 +491,14 @@ export const getMonthlySalarySummary = async (req, res) => {
         await payrollCacheService.setMonthlySummary(store_id, month, year, result);
       } catch (cacheError) {
         console.warn('Cache write error:', cacheError);
-        // Tiếp tục mà không cache
       }
       res.json(result);
-    } catch (calcError) {
-      console.error('Error calculating totals:', calcError);
-      // Trả về empty result nếu có lỗi tính toán
-      const emptyResult = {
-        payrollId: null,
-        month: parseInt(month),
-        year: parseInt(year),
-        status: 'ERROR',
-        totalSalary: '0.00',
-        partTimeSalary: '0.00',
-        fullTimeCount: 0,
-        partTimeCount: 0,
-        employeeDetails: []
-      };
-      res.json(emptyResult);
+    } catch (queryError) {
+      console.error('Database query error:', queryError);
+      res.status(500).json({ message: 'Database query error', error: queryError.message });
     }
-  } catch (queryError) {
-    console.error('Database query error:', queryError);
-    res.status(500).json({ message: 'Database query error', error: queryError.message });
-  }
   } catch (error) {
     console.error("Lỗi lấy tóm tắt lương tháng:", error);
     res.status(500).json({ message: 'Get Monthly Salary Summary Error', error: error.message });
   }
 };
-

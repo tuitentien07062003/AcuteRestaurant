@@ -7,7 +7,6 @@ export function GlobalProvider({ children }) {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // Check if user is logged in on app load
     const checkAuth = async () => {
       try {
         console.log("[GlobalProvider] Checking auth...");
@@ -16,7 +15,6 @@ export function GlobalProvider({ children }) {
         setUser(userData.user);
       } catch (e) {
         console.log("[GlobalProvider] Auth check failed:", e);
-        // Not logged in, stay null
       }
     };
     checkAuth();

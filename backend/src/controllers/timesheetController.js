@@ -2,6 +2,10 @@ import { Employee } from "../models/Employee.js";
 import { Timesheet } from "../models/Timesheet.js";
 import { Op } from "sequelize";
 
+const getVNTime = () => {
+    return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Ho_Chi_Minh" }));
+};
+
 const end_hour = 23;
 const end_minute = 59;
 
@@ -27,55 +31,28 @@ export const getTimesheets = async (req, res) => {
 
 export const checkInOut = async (req, res) => {
     try {
-        const {internal_id} = req.body;
+        const { internal_id } = req.body;
+        const employee = await Employee.findOne({ where: { internal_id } });
 
-        const employee =  await Employee.findOne({where:{internal_id}});
-
-        if(!employee){
-            return res.status(404).json({message:"Nhân viên không tồn tại"});
+        if (!employee) {
+            return res.status(404).json({ message: "Nhân viên không tồn tại" });
         }
 
-        // Trước khi thực hiện chấm công cho ngày hôm nay, kiểm tra và đóng các ca mở của các ngày trước
+        // 1. Đóng các ca của những ngày trước (nếu có)
         await closePreviousOpenShifts(employee.id);
 
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
+        const now = getVNTime();
+        
+        // 2. Xác định mốc thời gian bắt đầu và kết thúc của ngày hôm nay (VN Time)
+        const startToday = new Date(now);
+        startToday.setHours(0, 0, 0, 0);
 
-        const startYesterday = new Date(yesterday);
-        startYesterday.setHours(0,0,0,0);
-
-        const endYesterday = new Date(yesterday);
-        endYesterday.setHours(end_hour, end_minute, 59, 999);
-
-        const openYesterdayShift = await Timesheet.findOne({
-            where:{
-                employee_id: employee.id,
-                check_out: null,
-                work_day: {
-                    [Op.between]: [startYesterday, endYesterday]
-                }
-            }
-        });
-
-        if (openYesterdayShift) {
-            const autoCheckOutTime = new Date(openYesterdayShift.work_day);
-            autoCheckOutTime.setHours(end_hour, end_minute, 0, 0);
-
-            const totalHours = ((autoCheckOutTime - new Date(openYesterdayShift.check_in)) / (1000 * 60 * 60)).toFixed(2);
-            await openYesterdayShift.update({
-                check_out: autoCheckOutTime,
-                total_hours: totalHours
-            });
-        }
-
-        const startToday = new Date();
-        startToday.setHours(0,0,0,0);
-
-        const endToday = new Date();
+        const endToday = new Date(now);
         endToday.setHours(end_hour, end_minute, 59, 999);
 
+        // 3. Tìm ca làm việc trong ngày hôm nay
         let todayShift = await Timesheet.findOne({
-            where:{
+            where: {
                 employee_id: employee.id,
                 work_day: {
                     [Op.between]: [startToday, endToday]
@@ -84,46 +61,56 @@ export const checkInOut = async (req, res) => {
         });
 
         if (!todayShift) {
-            // Check-in
+            // Thực hiện Check-in
             todayShift = await Timesheet.create({
                 employee_id: employee.id,
-                work_day: new Date(),
-                check_in: new Date(),
+                work_day: now,
+                check_in: now,
                 check_out: null,
             });
 
-            return res.status(200).json({message:"Check-in thành công", type:"CHECK_IN", time: todayShift.check_in});
+            return res.status(200).json({ 
+                message: "Check-in thành công", 
+                type: "CHECK_IN", 
+                time: todayShift.check_in 
+            });
         }
 
-        // Check-out
+        // 4. Thực hiện Check-out
         if (!todayShift.check_out) {
-            const checkOut = new Date();
-            const totalHours = ((checkOut - new Date(todayShift.check_in)) / (1000 * 60 * 60)).toFixed(2);
+            const checkOutTime = getVNTime();
+            // Tính toán số giờ dựa trên timestamp thực tế
+            const diffInMs = checkOutTime.getTime() - new Date(todayShift.check_in).getTime();
+            const totalHours = (diffInMs / (1000 * 60 * 60)).toFixed(2);
 
             await todayShift.update({
-                check_out: checkOut,
+                check_out: checkOutTime,
                 total_hours: totalHours
             });
 
-            return res.status(200).json({message:"Check-out thành công", type:"CHECK_OUT", total_hours: totalHours});
+            return res.status(200).json({ 
+                message: "Check-out thành công", 
+                type: "CHECK_OUT", 
+                total_hours: totalHours 
+            });
         }
 
-        return res.status(400).json({message:"Ca làm việc hôm nay đã hoàn tất"});
+        return res.status(400).json({ message: "Ca làm việc hôm nay đã hoàn tất" });
         
     } catch (err) {
-        console.error(err);
-        return res.status(500).json({message:"Lỗi server"});
+        console.error("Lỗi Check-in/Out:", err);
+        return res.status(500).json({ message: "Lỗi server" });
     }
 };
 
 // Hàm đóng các ca mở của các ngày trước
 const closePreviousOpenShifts = async (employeeId) => {
     try {
-        const today = new Date();
-        const startToday = new Date(today);
+        const now = getVNTime();
+        const startToday = new Date(now);
         startToday.setHours(0, 0, 0, 0);
 
-        // Tìm tất cả ca mở trước ngày hôm nay
+        // Tìm tất cả ca mở có ngày làm việc nhỏ hơn ngày hôm nay
         const openShifts = await Timesheet.findAll({
             where: {
                 employee_id: employeeId,
@@ -134,28 +121,26 @@ const closePreviousOpenShifts = async (employeeId) => {
             }
         });
 
-        if (openShifts.length === 0) {
-            return;
-        }
+        if (openShifts.length === 0) return;
 
-        console.log(`[Close Previous Shifts] Tìm thấy ${openShifts.length} ca mở trước ngày hôm nay cho nhân viên ${employeeId}`);
-
-        // Đóng tất cả ca mở vào lúc 23:59:59 của ngày đó
         for (const shift of openShifts) {
+            // Đặt giờ đóng ca là 23:59:59 của CHÍNH NGÀY làm việc đó
             const closeTime = new Date(shift.work_day);
             closeTime.setHours(23, 59, 59, 999);
 
-            const totalHours = ((closeTime - new Date(shift.check_in)) / (1000 * 60 * 60)).toFixed(2);
+            const checkInTime = new Date(shift.check_in);
+            const diffInMs = closeTime.getTime() - checkInTime.getTime();
+            
+            // Đảm bảo không bị số âm nếu có lỗi dữ liệu đầu vào
+            const totalHours = diffInMs > 0 ? (diffInMs / (1000 * 60 * 60)).toFixed(2) : 0;
 
             await shift.update({
                 check_out: closeTime,
                 total_hours: totalHours
             });
 
-            console.log(`[Close Previous Shifts] Đã đóng ca ngày ${shift.work_day.toISOString().split('T')[0]}: ${totalHours}h`);
+            console.log(`[Auto-Close] Đã đóng ca cũ ngày ${shift.work_day.toISOString().split('T')[0]}: ${totalHours}h`);
         }
-
-        console.log(`[Close Previous Shifts] Hoàn thành đóng ${openShifts.length} ca mở`);
     } catch (error) {
         console.error('[Close Previous Shifts] Lỗi:', error);
     }
