@@ -16,6 +16,7 @@ import inventoryRoutes from './routes/inventoryRoutes.js';
 import payrollRoutes from './routes/payrollRoutes.js';
 import paymentRequestRoutes from './routes/paymentRequestRoutes.js';
 import stockRoutes from './routes/stockRoutes.js';
+import hqRoutes from './routes/hqRoutes.js';
 import { connectDB } from './config/db.js';
 import path from 'path';
 import cors from 'cors';
@@ -29,6 +30,7 @@ const app = express();
 const allowedOrigins = [
   "http://localhost:5173",
   "http://127.0.0.1:5173",
+  "http://localhost:5174",
   "https://acute-restaurant.vercel.app"
 ];
 
@@ -65,6 +67,7 @@ app.use("/acute/inventory", requireLogin, inventoryRoutes);
 app.use("/acute/payroll", requireLogin, payrollRoutes);
 app.use("/acute/payment-requests", requireLogin, paymentRequestRoutes);
 app.use("/acute/stock", requireLogin, stockRoutes);
+app.use("/acute/hq", hqRoutes);
 
 connectDB().then(() => {
   app.listen(PORT, () => {

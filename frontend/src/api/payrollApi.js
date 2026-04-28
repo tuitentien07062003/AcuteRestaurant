@@ -22,6 +22,14 @@ const payrollApi = {
   getMonthlySalarySummary: (month, year, storeId) => 
     axiosClient.get('/payroll/monthly-summary', { 
       params: { month, year, store_id: storeId } 
+    }).then(r => r.data),
+
+  // Gửi bảng lương lên HQ
+  sendToHQ: (month, year, storeId) =>
+    axiosClient.post('/payroll/send-to-hq', {
+      store_id: storeId,
+      month,
+      year
     }).then(r => r.data)
 };
 

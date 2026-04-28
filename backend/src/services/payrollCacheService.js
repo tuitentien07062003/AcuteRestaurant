@@ -4,9 +4,11 @@ import cacheService from './cacheService.js';
 const PAYROLL_PREFIX = 'payroll:store';
 const DAILY_SUMMARY_PREFIX = 'salary:daily';
 const DAY_TIMESHEETS_PREFIX = 'salary:timesheets';
+const MONTHLY_SUMMARY_PREFIX = 'salary:monthly';
 const PAYROLL_TTL = 3600; // 1 hour
 const DAILY_TTL = 30 * 60; // 30 minutes (auto-update cho daily)
 const TIMESHEETS_TTL = 15 * 60; // 15 minutes
+const MONTHLY_TTL = 3600; // 1 hour
 
 class PayrollCacheService {
     /**
@@ -104,18 +106,6 @@ class PayrollCacheService {
     async invalidateDayTimesheets(storeId, date) {
         const key = `${DAY_TIMESHEETS_PREFIX}:${storeId}:${date}`;
         return await cacheService.delete(key);
-    }
-
-    /**
-     * Cache monthly salary summary (tóm tắt lương tháng)
-     * @param {string|number} storeId 
-     * @param {number} month 
-     * @param {number} year 
-     * @param {any} data 
-     */
-    async setMonthlySummary(storeId, month, year, data, ttl = MONTHLY_TTL) {
-        const key = `${MONTHLY_SUMMARY_PREFIX}:${storeId}:${month}:${year}`;
-        return await cacheService.set(key, data, ttl);
     }
 
     /**

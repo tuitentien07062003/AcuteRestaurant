@@ -4,11 +4,15 @@ import {
   Users, 
   DollarSign,
   Search,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Send,
+  CheckCircle,
+  Loader2
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
 import { 
   Table, 
   TableBody, 
@@ -21,11 +25,14 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useMonthlySalarySummary } from '@/hooks/useMonthlySalarySummary'
 import { formatHours, formatCurrency } from '@/lib/formatters'
 import { GlobalContext } from "@/context/GlobalContext"
+import payrollApi from "@/api/payrollApi"
 
 export const MonthlySalarySummary = () => {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1)
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
+  const [sending, setSending] = useState(false)
+  const [sendMessage, setSendMessage] = useState(null)
 
   const { user } = useContext(GlobalContext)
   const storeId = user?.store_id || 7062003
@@ -33,23 +40,27 @@ export const MonthlySalarySummary = () => {
   const { 
     data: monthlyData, 
     isLoading, 
-    error 
+    error,
+    refetch
   } = useMonthlySalarySummary(selectedMonth, selectedYear, storeId)
 
   const stats = useMemo(() => {
-    if (!monthlyData) return { totalHours: 0, totalSalary: 0, employeeCount: 0 }
+    if (!monthlyData) return { totalHours: 0, totalSalary: 0, employeeCount: 0, partTimeSalary: 0, fullTimeSalary: 0 }
     
     return {
       totalHours: parseFloat(monthlyData.totalHours) || 0,
       totalSalary: parseFloat(monthlyData.totalSalary) || 0,
       employeeCount: monthlyData.employeeCount || 0,
+      partTimeSalary: parseFloat(monthlyData.partTimeSalary) || 0,
+      fullTimeSalary: parseFloat(monthlyData.fullTimeSalary) || 0,
+      status: monthlyData.status || 'CALCULATED'
     }
   }, [monthlyData])
 
   const handleExportExcel = () => {
     if (!monthlyData?.employeeDetails) return
 
-    const headers = ["STT", "Nhân viên", "Loại hình", "Tổng giờ làm", "Lương/Giờ", "Thành tiền"]
+    const headers = ["STT", "Nhân viên", "Loại hình", "Tổng giờ làm", "Lương/Giờ hoặc CB", "Thành tiền"]
     const rows = monthlyData.employeeDetails.map((emp, index) => [
       index + 1,
       emp.employeeName || 'Không rõ',
@@ -67,15 +78,36 @@ export const MonthlySalarySummary = () => {
     link.click()
   }
 
+  const handleSendToHQ = async () => {
+    setSending(true)
+    setSendMessage(null)
+    try {
+      await payrollApi.sendToHQ(selectedMonth, selectedYear, storeId)
+      setSendMessage({ type: 'success', text: 'Bảng lương đã được gửi lên HQ thành công!' })
+      refetch()
+    } catch (err) {
+      setSendMessage({ type: 'error', text: err?.response?.data?.message || 'Lỗi gửi bảng lương lên HQ' })
+    } finally {
+      setSending(false)
+    }
+  }
+
   const filteredEmployees = monthlyData?.employeeDetails?.filter(emp => 
     (emp.employeeName || '').toLowerCase().includes(searchTerm.toLowerCase())
   ) || []
+
+  const statusBadge = () => {
+    const status = stats.status
+    if (status === 'APPROVED') return <Badge className="bg-green-100 text-green-700 border-green-200"><CheckCircle className="w-3 h-3 mr-1" /> Đã quyết toán HQ</Badge>
+    if (status === 'SENT') return <Badge className="bg-blue-100 text-blue-700 border-blue-200"><Send className="w-3 h-3 mr-1" /> Đã gửi HQ</Badge>
+    return <Badge variant="outline">Chưa gửi HQ</Badge>
+  }
 
   return (
     <div className="p-6 space-y-6 bg-gray-50/50 min-h-screen">
 
       <div className="flex flex-wrap gap-3 items-center justify-between">
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
           <select
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(Number(e.target.value))}
@@ -96,15 +128,33 @@ export const MonthlySalarySummary = () => {
               return <option key={year} value={year}>{year}</option>
             })}
           </select>
+
+          {statusBadge()}
         </div>
 
-        <Button onClick={handleExportExcel} className="flex items-center gap-2">
-          <FileSpreadsheet className="h-4 w-4" />
-          Xuất Excel
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={handleSendToHQ} 
+            disabled={sending || stats.status === 'SENT' || stats.status === 'APPROVED'}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+          >
+            {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            Gửi HQ
+          </Button>
+          <Button onClick={handleExportExcel} variant="outline" className="flex items-center gap-2">
+            <FileSpreadsheet className="h-4 w-4" />
+            Xuất Excel
+          </Button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {sendMessage && (
+        <div className={`p-3 rounded-lg text-sm ${sendMessage.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+          {sendMessage.text}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="border-none shadow-sm bg-gradient-to-br from-blue-600 to-blue-700 text-white">
           <CardContent className="p-6">
             <div className="flex justify-between items-start opacity-90">
@@ -132,11 +182,23 @@ export const MonthlySalarySummary = () => {
         <Card className="border-none shadow-sm">
           <CardContent className="p-6">
             <div className="flex justify-between items-start">
-              <p className="text-gray-500 text-sm font-medium">Nhân viên</p>
-              <Users className="h-5 w-5 text-purple-600" />
+              <p className="text-gray-500 text-sm font-medium">Lương Part-time</p>
+              <DollarSign className="h-5 w-5 text-orange-600" />
             </div>
             <h3 className="text-2xl font-bold mt-2 text-gray-800">
-              {isLoading ? <Skeleton className="h-8 w-12" /> : stats.employeeCount}
+              {isLoading ? <Skeleton className="h-8 w-32" /> : formatCurrency(stats.partTimeSalary)}
+            </h3>
+          </CardContent>
+        </Card>
+
+        <Card className="border-none shadow-sm">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-start">
+              <p className="text-gray-500 text-sm font-medium">Lương Full-time</p>
+              <DollarSign className="h-5 w-5 text-purple-600" />
+            </div>
+            <h3 className="text-2xl font-bold mt-2 text-gray-800">
+              {isLoading ? <Skeleton className="h-8 w-32" /> : formatCurrency(stats.fullTimeSalary)}
             </h3>
           </CardContent>
         </Card>
@@ -161,7 +223,7 @@ export const MonthlySalarySummary = () => {
                 <TableHead>Nhân viên</TableHead>
                 <TableHead>Loại</TableHead>
                 <TableHead>Giờ làm</TableHead>
-                <TableHead>Lương/Giờ</TableHead>
+                <TableHead>Lương/Giờ hoặc CB</TableHead>
                 <TableHead>Thành tiền</TableHead>
               </TableRow>
             </TableHeader>
@@ -177,7 +239,11 @@ export const MonthlySalarySummary = () => {
                   <TableRow key={index}>
                     <TableCell>{index + 1}</TableCell>
                     <TableCell>{emp.employeeName}</TableCell>
-                    <TableCell>{emp.type}</TableCell>
+                    <TableCell>
+                      <Badge variant={emp.type === 'full-time' ? 'secondary' : 'default'}>
+                        {emp.type === 'full-time' ? 'Full-time' : 'Part-time'}
+                      </Badge>
+                    </TableCell>
                     <TableCell>{emp.totalHours}</TableCell>
                     <TableCell>{formatCurrency(emp.hourlyRate)}</TableCell>
                     <TableCell>{formatCurrency(emp.salary)}</TableCell>
@@ -198,3 +264,4 @@ export const MonthlySalarySummary = () => {
     </div>
   )
 }
+
