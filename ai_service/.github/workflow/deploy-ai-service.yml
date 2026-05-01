@@ -1,0 +1,38 @@
+name: Deploy AI Service to Render
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'ai_service/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Login vào Render Container Registry
+      - name: Login to Render
+        run: echo "${{ secrets.RENDER_API_KEY }}" | docker login render-registry.io -u __token__ --password-stdin
+
+      # Build Docker image
+      - name: Build Docker image
+        run: |
+          docker build -t render-registry.io/ai-forecast-service:${{ github.sha }} ai_service/
+
+      # Push image lên registry
+      - name: Push to Render
+        run: |
+          docker push render-registry.io/ai-forecast-service:${{ github.sha }}
+
+      # Deploy service
+      - name: Deploy to Render
+        run: |
+          render deploy service ai-forecast-service \
+            --owner-id ${{ secrets.RENDER_OWNER_ID }} \
+            --service-id ${{ secrets.RENDER_SERVICE_ID }} \
+            --image-id render-registry.io/ai-forecast-service:${{ github.sha }}
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
