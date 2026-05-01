@@ -1,16 +1,110 @@
-# React + Vite
+# Frontend (POS & Admin Dashboard)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> Giao diện POS bán hàng và Admin Dashboard quản lý chi nhánh
 
-Currently, two official plugins are available:
+## 🚀 Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Framework:** React 19 + Vite 7
+- **Routing:** React Router 7
+- **State:** React Query 5 + Context API
+- **UI:** Radix UI + Tailwind CSS 4
+- **Forms:** React Hook Form + Zod
+- **PDF:** @react-pdf/renderer
+- **Build:** Vite (ESBuild)
 
-## React Compiler
+## 📋 Chức năng
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### POS Module (`/pos`)
+- Đặt món và tính tiền
+- Quản lý giỏ hàng (cart)
+- Thanh toán và in hóa đơn PDF
+- Kitchen Display Screen (KDS)
+- Quản lý voucher/discount
+- Xử lý hoàn đơn (refund)
 
-## Expanding the ESLint configuration
+### Admin Module (`/admin/*`)
+- Dashboard tổng quan (doanh thu, nhân sự, kho)
+- Quản lý nhân viên (thêm/sửa/xóa)
+- Quản lý ca làm và chấm công
+- Tính lương và báo cáo
+- Quản lý kho vàInventory
+- Quản lý hóa đơn mua hàng
+- Quản lý phiếu chi
+- Dự báo doanh thu (AI integrated)
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 🛠️ Cài đặt
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Truy cập: http://localhost:5173
+
+## ⚙️ Cấu hình
+
+Tạo file `.env`:
+
+```env
+VITE_API_URL=http://localhost:3000/acute
+```
+
+## 📁 Cấu trúc folder
+
+```
+frontend/
+├── src/
+│   ├── api/              # Axios clients
+│   ├── components/        # Reusable components
+│   │   ├── Admin/       # Admin dashboard components
+│   │   ├── BillPDF.jsx  # Invoice PDF generator
+│   │   ├── KitchenScreen.jsx
+│   │   ├── Order.jsx
+│   │   └── ...
+│   ├── context/         # React contexts
+│   ├── hooks/          # Custom hooks
+│   ├── pages/         # Page components
+│   │   ├── Admin.jsx
+│   │   └── Pos.jsx
+│   ├── schemas/        # Zod validation
+│   └── types/        # TypeScript definitions
+├── vite.config.js
+├── tailwind.config.js
+└── vercel.json        # Deployment config
+```
+
+## 🔌 API Integration
+
+Base URL: `VITE_API_URL` (default: http://localhost:3000/acute)
+
+| Module | API Endpoints |
+|--------|------------|
+| Auth | `/auth/login`, `/auth/register` |
+| Menu | `/menu`, `/menu-categories` |
+| Orders | `/bill-orders` |
+| Employees | `/employee` |
+| Timesheet | `/timesheet` |
+| Payroll | `/payroll` |
+| Inventory | `/inventory`, `/stock` |
+| Finance | `/invoices`, `/payment-requests` |
+| Sales | `/sales` |
+| Vouchers | `/voucher` |
+
+## 🚀 Deploy
+
+```bash
+npm run build
+npm run preview
+```
+
+Deploy lên Vite:
+- Connect GitHub repo → Vercel
+- Auto deploy on push to `main`
+- Environment: `VITE_API_URL`
+
+## 🔗 Related Services
+
+- **Backend:** http://localhost:3000
+- **HQ Frontend:** http://localhost:5174
+- **AI Service:** http://localhost:5001

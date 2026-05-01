@@ -1,0 +1,12 @@
+.env
+requirements.txt
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+
+*.dll
+*.so
+
+.DS_Store
+Thumbs.db

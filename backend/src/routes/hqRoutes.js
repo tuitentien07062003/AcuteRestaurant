@@ -21,6 +21,10 @@ import {
     getPayrollById,
     approvePayroll
 } from '../controllers/payrollController.js';
+import {
+    getSalesForecast,
+    trainSalesForecast
+} from '../controllers/salesSummaryController.js';
 
 const routes = express.Router();
 
@@ -29,6 +33,10 @@ routes.get('/stores', getAllStores);
 routes.get('/stores/:id', getStoreById);
 routes.get('/stores/:id/sales', getStoreSalesSummary);
 routes.patch('/stores/:id/sales/:date', updateStoreSalesSummary);
+
+// AI Forecast routes for HQ (no auth required)
+routes.get('/forecast', getSalesForecast);
+routes.post('/forecast/train', trainSalesForecast);
 
 // Payroll routes for HQ (no auth required) - MUST be before /:id to avoid matching "payrolls" as employee id
 routes.get('/payrolls', getHqPayrolls);

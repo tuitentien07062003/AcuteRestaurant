@@ -19,6 +19,7 @@ import {
   Save,
   X,
   Wand2,
+  Sparkles,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
@@ -26,6 +27,7 @@ import { Badge } from "../components/ui/badge";
 import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
 import { useStoreDetail, useStoreSales, useUpdateStoreSales, useStorePayrollDaily } from "../hooks/useStores";
+import { useForecast } from "../hooks/useForecast.js"; // Đã xóa bớt import lặp
 import { formatCurrency, formatDate } from "../lib/formatters";
 
 // Cấu hình ID mặc định theo yêu cầu
@@ -34,6 +36,16 @@ const DEFAULT_STORE_ID = "7062003";
 // Helper functions
 function generateTaxCode(id) {
   return `03${String(id).padStart(8, "0")}-001`;
+}
+
+// Check if dateStr is tomorrow
+function isTomorrow(dateStr) {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(0, 0, 0, 0);
+  const d = new Date(dateStr);
+  d.setHours(0, 0, 0, 0);
+  return d.getTime() === tomorrow.getTime();
 }
 
 export default function BranchDetailPage() {
@@ -65,6 +77,9 @@ export default function BranchDetailPage() {
   const [payrollDate, setPayrollDate] = useState(null);
   const { data: payrollData } = useStorePayrollDaily(payrollDate, storeId);
 
+  // AI Forecast
+  const { forecastData, loading: forecastLoading, error: forecastError, fetchForecast } = useForecast();
+
   // Memoized values for "Thông tin" tab
   const sm = useMemo(() => {
     if (!store?.employees) return null;
@@ -84,6 +99,10 @@ export default function BranchDetailPage() {
   };
 
   const startEdit = (row) => {
+    // Nếu đã có forecast và total_hours → không cho edit (Nhập 1 lần duy nhất)
+    if (row.forecast != null && row.total_hours != null) {
+      return;
+    }
     setEditingId(row.id);
     setEditForm({
       forecast: row.forecast ?? "",
@@ -147,7 +166,7 @@ export default function BranchDetailPage() {
           <TabsTrigger value="business">Kinh doanh & KPI</TabsTrigger>
         </TabsList>
 
-        {/* Tab Thông tin chung (ĐÃ HOÀN TÁC) */}
+        {/* Tab Thông tin chung */}
         <TabsContent value="info" className="mt-4 space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <Card className="lg:col-span-2">
@@ -263,13 +282,55 @@ export default function BranchDetailPage() {
                   <TrendingUp className="w-4 h-4 text-blue-600" /> Báo cáo chi tiết & KPI
                 </CardTitle>
                 <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                    onClick={() => fetchForecast(storeId, 7)}
+                    disabled={forecastLoading}
+                  >
+                    {forecastLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Sparkles className="w-4 h-4 mr-1" />}
+                    AI Dự báo
+                  </Button>
                   <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-36 h-9" />
                   <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="w-36 h-9" />
                   <Button size="sm" onClick={handleApplyFilter}><Search className="w-4 h-4 mr-1" /> Lọc</Button>
                 </div>
               </div>
             </CardHeader>
+            
             <CardContent className="p-0">
+              
+              {/* VÙNG HIỂN THỊ KẾT QUẢ AI DỰ BÁO (THÊM MỚI) */}
+              {forecastData?.forecast && (
+                <div className="m-4 p-4 border rounded-lg bg-purple-50/50">
+                  <h3 className="text-sm font-semibold text-purple-800 mb-3 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4" /> Kết quả AI Dự báo (7 ngày)
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+                    {forecastData.forecast.map((f, i) => {
+                      const highlight = isTomorrow(f.date);
+                      return (
+                        <div 
+                          key={i} 
+                          className={`p-3 rounded-md border flex flex-col items-center justify-center transition-all ${
+                            highlight 
+                              ? 'bg-yellow-50 border-yellow-400 shadow-[0_0_10px_rgba(250,204,21,0.3)] ring-1 ring-yellow-400' 
+                              : 'bg-white border-purple-100'
+                          }`}
+                        >
+                           <span className="text-xs text-gray-500 mb-1">{new Date(f.date).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}</span>
+                           {highlight && <Badge className="mb-1 text-[10px] bg-yellow-400 text-yellow-900 hover:bg-yellow-400">NGÀY MAI</Badge>}
+                           <span className={`font-bold ${highlight ? 'text-yellow-700' : 'text-purple-700'}`}>
+                             {formatCurrency(f.yhat)}
+                           </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
@@ -289,6 +350,9 @@ export default function BranchDetailPage() {
                       <tr><td colSpan={8} className="py-10 text-center text-gray-500">Đang tải dữ liệu...</td></tr>
                     ) : sales.map((row) => {
                       const isEditing = editingId === row.id;
+                      // Logic cũ đã xử lý hoàn hảo việc "Khóa không cho chỉnh sửa lại" khi đã Set
+                      const alreadySet = row.forecast != null && row.total_hours != null; 
+                      
                       return (
                         <tr key={row.id} className="hover:bg-gray-50 transition-colors">
                           <td className="py-3 px-4">{formatDate(row.sales_date)}</td>
@@ -346,6 +410,8 @@ export default function BranchDetailPage() {
                                   onChange={(e) => setEditForm({ ...editForm, labor_cost: e.target.value })}
                                 />
                               </div>
+                            ) : alreadySet ? (
+                              <span className="text-xs text-gray-400 font-medium bg-gray-100 py-1 px-2 rounded">Đã quy định</span>
                             ) : (
                               <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-blue-600" onClick={() => startEdit(row)}>
                                 <Edit2 className="w-4 h-4" />

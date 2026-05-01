@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from "react"
+import { useState, useEffect, useContext } from "react"
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -8,7 +7,10 @@ import {
   Receipt,
   Download,
   Calendar,
-  Filter
+  Filter,
+  Loader2,
+  AlertCircle,
+  Target // Thêm icon Target
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -22,8 +24,9 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { fetchBillOrders } from "@/api/billOrders"
+import { GlobalContext } from "@/context/GlobalContext"
+import axiosClient from "@/api/axiosClient.js"
 
-// Mock data for demonstration
 const mockBills = [
   { id: 1, order_id: "ORD001", total_amount: 150000, discount_amount: 15000, payment_method: "Cash", status: "Completed", created_at: "2024-01-15T10:30:00" },
   { id: 2, order_id: "ORD002", total_amount: 200000, discount_amount: 0, payment_method: "Momo", status: "Completed", created_at: "2024-01-15T11:00:00" },
@@ -36,9 +39,13 @@ const RevenueDashboard = () => {
   const [dateRange, setDateRange] = useState("today")
   const [bills, setBills] = useState([])
   const [loading, setLoading] = useState(false)
+  
+  const [todayTarget, setTodayTarget] = useState(null)
+  const storeId = "7062003" 
 
   useEffect(() => {
     loadBills()
+    loadTodayTarget()
   }, [dateRange])
 
   const loadBills = async () => {
@@ -51,6 +58,18 @@ const RevenueDashboard = () => {
       setBills(mockBills)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadTodayTarget = async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const { data } = await axiosClient.get(`/sales/daily`, {
+        params: { store_id: storeId, date: today }
+      });
+        setTodayTarget(data);
+    } catch (error) {
+      console.error("Lỗi lấy chỉ tiêu HQ:", error);
     }
   }
 
@@ -69,7 +88,7 @@ const RevenueDashboard = () => {
     return sum
   }, 0)
 
-  const vat = totalRevenue * 0.1 // 10% VAT
+  const vat = totalRevenue * 0.1
   const netRevenue = totalRevenue - vat
 
   const stats = [
@@ -118,7 +137,6 @@ const RevenueDashboard = () => {
   }
 
   const handleExport = () => {
-    // Generate CSV export
     const headers = ["Mã đơn", "Tổng tiền", "Giảm giá", "Thanh toán", "Trạng thái", "Ngày"]
     const rows = bills.map(bill => [
       bill.order_id,
@@ -196,6 +214,31 @@ const RevenueDashboard = () => {
         })}
       </div>
 
+      {/* Chỉ tiêu HQ quy định (Thay thế cho AI Widget cũ) */}
+      <Card className="border-blue-200 bg-blue-50/30">
+        <CardHeader className="border-b pb-3 border-blue-100">
+          <CardTitle className="text-base flex items-center gap-2 text-blue-800">
+            <Target className="w-4 h-4" /> Chỉ tiêu HQ quy định (Hôm nay)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-4">
+          <div className="flex gap-10">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Dự báo doanh thu (Forecast)</p>
+              <p className="text-2xl font-bold text-blue-700">
+                {todayTarget?.forecast ? formatCurrency(todayTarget.forecast) : "Chưa có dữ liệu"}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Quỹ giờ làm (Total Hours)</p>
+              <p className="text-2xl font-bold text-orange-600">
+                {todayTarget?.total_hours ? `${todayTarget.total_hours} giờ` : "Chưa có dữ liệu"}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Revenue Details Table */}
       <Card>
         <CardHeader>
@@ -249,5 +292,3 @@ const RevenueDashboard = () => {
 }
 
 export default RevenueDashboard
-
-

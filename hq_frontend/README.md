@@ -1,16 +1,78 @@
-# React + Vite
+# HQ Frontend (Headquarters Dashboard)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> Giao diện quản lý trung tâm - điều hành đa chi nhánh
 
-Currently, two official plugins are available:
+## 🚀 Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Framework:** React 19 + Vite 8
+- **Routing:** React Router 7
+- **State:** React Query
+- **UI:** Radix UI + Tailwind CSS 4
+- **HTTP:** Axios
 
-## React Compiler
+## 📋 Chức năng
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### HQ Dashboard Module
+- **Quản lý chi nhánh** - Xem danh sách, thông tin chi tiết từng chi nhánh
+- **Tổng hợp doanh thu** - So sánh giữa các chi nhánh
+- **Quản lý nhân sự HQ** - Thêm/sửa/xóa nhân viên trung tâm
+- **Quản lý lương** - Tính lương tập trung, giải ngân ngân hàng
+- **Dự báo AI** - Xem dự báo doanh thu tập trung
 
-## Expanding the ESLint configuration
+## 🛠️ Cài đặt
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```bash
+cd hq_frontend
+npm install
+npm run dev
+```
+
+Truy cập: http://localhost:5174
+
+## ⚙️ Cấu hình
+
+Tạo file `.env`:
+
+```env
+VITE_API_URL=http://localhost:3000/acute
+```
+
+## 📁 Cấu trúc folder
+
+```
+hq_frontend/
+├── src/
+│   ├── api/            # API clients
+│   ├── components/      # Reusable components
+│   │   └── HQ/       # HQ-specific components
+│   ├── hooks/         # Custom hooks
+│   ├── pages/         # Page components
+│   └── context/      # Global state
+├── vite.config.js
+└── tailwind.config.js
+```
+
+## 🔌 API Integration
+
+| Module | API Endpoints |
+|--------|------------|
+| Stores | `/acute/store`, `/acute/hq/stores` |
+| Employees | `/acute/employee`, `/acute/hq/employees` |
+| Payroll | `/acute/payroll` |
+| Sales | `/acute/sales` |
+| Forecast | `/acute/sales/forecast` |
+
+## 🚀 Deploy
+
+```bash
+npm run build
+```
+
+- Connect GitHub → Vercel
+- Auto deploy on push
+
+## 🔗 Related Services
+
+- **Backend:** http://localhost:3000
+- **POS Frontend:** http://localhost:5173
+- **AI Service:** http://localhost:5001

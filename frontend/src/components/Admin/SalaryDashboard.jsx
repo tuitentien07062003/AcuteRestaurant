@@ -26,25 +26,6 @@ import payrollApi from "@/api/payrollApi"
 import { fetchEmployees } from "@/api/employees"
 import { fetchTimesheets } from "@/api/timesheet"
 
-// Mock employee salary data
-const mockEmployees = [
-  { id: 1, full_name: "Nguyễn Văn A", position: "CREW", hourly_rate: 25000, is_active: true },
-  { id: 2, full_name: "Trần Thị B", position: "CT", hourly_rate: 30000, is_active: true },
-  { id: 3, full_name: "Lê Văn C", position: "CL", hourly_rate: 35000, is_active: true },
-  { id: 4, full_name: "Phạm Thị D", position: "CREW", hourly_rate: 25000, is_active: true },
-  { id: 5, full_name: "Hoàng Văn E", position: "CREW", hourly_rate: 25000, is_active: false },
-]
-
-const mockTimesheets = [
-  { id: 1, employee_id: 1, date: "2024-01-15", check_in: "08:00", check_out: "17:00", hours: 8 },
-  { id: 2, employee_id: 1, date: "2024-01-14", check_in: "08:00", check_out: "17:00", hours: 8 },
-  { id: 3, employee_id: 2, date: "2024-01-15", check_in: "09:00", check_out: "18:00", hours: 8 },
-  { id: 4, employee_id: 2, date: "2024-01-14", check_in: "09:00", check_out: "18:00", hours: 8 },
-  { id: 5, employee_id: 3, date: "2024-01-15", check_in: "10:00", check_out: "19:00", hours: 8 },
-  { id: 6, employee_id: 3, date: "2024-01-14", check_in: "10:00", check_out: "19:00", hours: 8 },
-  { id: 7, employee_id: 4, date: "2024-01-15", check_in: "08:00", check_out: "16:00", hours: 7 },
-]
-
 const positionLabels = {
   CREW: { label: "Nhân viên", color: "bg-blue-100 text-blue-700" },
   CT: { label: "CTV", color: "bg-purple-100 text-purple-700" },
