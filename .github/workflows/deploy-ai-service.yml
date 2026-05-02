@@ -1,38 +1,35 @@
-name: Deploy AI Service to Render
+name: CI/CD Docker for AI Service
 
 on:
   push:
-    branches:
-      - main
+    branches: [ "main" ]
     paths:
       - 'ai_service/**'
 
 jobs:
-  deploy:
+  docker-test-deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      # Login vào Render Container Registry
-      - name: Login to Render
-        run: echo "${{ secrets.RENDER_API_KEY }}" | docker login render-registry.io -u __token__ --password-stdin
-
-      # Build Docker image
       - name: Build Docker image
-        run: |
-          docker build -t render-registry.io/ai-forecast-service:${{ github.sha }} ai_service/
+        run: docker build -t ai-service-image ./ai_service
 
-      # Push image lên registry
-      - name: Push to Render
+      - name: Run container
         run: |
-          docker push render-registry.io/ai-forecast-service:${{ github.sha }}
+          docker run -d -p 8000:8000 --name test-container ai-service-image
+          echo "Đang đợi AI load model vào RAM..."
+          sleep 20 
 
-      # Deploy service
-      - name: Deploy to Render
+      - name: Health check
         run: |
-          render deploy service ai-forecast-service \
-            --owner-id ${{ secrets.RENDER_OWNER_ID }} \
-            --service-id ${{ secrets.RENDER_SERVICE_ID }} \
-            --image-id render-registry.io/ai-forecast-service:${{ github.sha }}
-        env:
-          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          curl -f http://localhost:8000/health
+
+      - name: Stop container
+        run: docker rm -f test-container
+
+      - name: Trigger Render Deploy
+        if: success()
+        run: curl -f -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL_AI_SERVICE }}"
