@@ -15,7 +15,8 @@ WORKDIR /app
 FROM base AS dependencies
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt --target /app/.venv
+RUN python -m venv /app/.venv && \
+    /app/.venv/bin/pip install --no-cache-dir -r requirements.txt
 
 # Stage 3: Application
 FROM base
@@ -23,9 +24,10 @@ FROM base
 # Copy virtual environment from dependencies stage
 COPY --from=dependencies /app/.venv /app/.venv
 ENV PATH="/app/.venv/bin:$PATH"
+ENV PYTHONPATH="/app"
 
 # Copy application code
-COPY app/ ./app/
+COPY . .
 
 # Expose port
 EXPOSE 8000
