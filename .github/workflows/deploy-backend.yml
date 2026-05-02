@@ -20,9 +20,13 @@ jobs:
 
       - name: Run container
         run: |
-          docker run -d -p 3000:3000 --name backend-test-container backend-image
-          echo "Đang đợi Backend khởi động..."
-          sleep 15 
+          docker run -d -p 3000:3000 \
+            --name backend-test-container \
+            -e OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:4318" \
+            -e NODE_ENV="test" \
+            backend-image
+          echo "Waiting for backend to initialize..."
+          sleep 15
 
       - name: Health check & Debug logs
         run: |

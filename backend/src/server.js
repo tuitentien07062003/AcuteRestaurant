@@ -39,9 +39,8 @@ const isProduction = process.env.NODE_ENV === "production" || process.env.RENDER
 
 app.use(cors({
   origin: function(origin, callback) {
-    // Cho phép không có origin hoặc các origin trong danh sách
     if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, origin || allowedOrigins[2]); // Pass origin explicitly
+      callback(null, origin || allowedOrigins[2]); 
     } else {
       callback(new Error("Not allowed by CORS"));
     }
