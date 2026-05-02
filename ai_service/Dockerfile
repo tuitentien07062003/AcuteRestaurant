@@ -12,10 +12,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 # Stage 2: Install dependencies
-FROM base as dependencies
+FROM base AS dependencies
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt --target /app/.venv
 
 # Stage 3: Application
 FROM base
