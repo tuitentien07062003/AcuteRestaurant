@@ -1,0 +1,44 @@
+name: CI/CD Docker for Backend
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/**'
+
+jobs:
+  docker-test-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t backend-image ./backend
+
+      - name: Run container
+        run: |
+          docker run -d -p 3000:3000 --name backend-test-container backend-image
+          echo "Đang đợi Backend khởi động..."
+          sleep 15 
+
+      - name: Health check & Debug logs
+        run: |
+          # Kiểm tra endpoint mặc định hoặc /health nếu bạn có thiết lập
+          if ! curl -f http://localhost:3000; then
+            echo "--- DOCKER LOGS TRONG CONTAINER ---"
+            docker logs backend-test-container
+            echo "-----------------------------------"
+            exit 1
+          fi
+
+      - name: Stop and cleanup container
+        run: docker rm -f backend-test-container
+
+      - name: Trigger Render Deploy
+        if: success()
+        run: |
+          echo "Test Backend thành công! Đang gọi Render..."
+          curl -f -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL_BACKEND }}"
