@@ -9,14 +9,12 @@ from app.models.forecaster import SalesForecaster
 from dotenv import load_dotenv
 load_dotenv()
 
-# Logging setup
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
 logger = logging.getLogger(__name__)
 
-# Background scheduler for nightly batch
 scheduler = BackgroundScheduler()
 
 
@@ -44,14 +42,11 @@ def nightly_job():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
     logger.info("🚀 AI Service khởi động...")
-    # Schedule nightly job at 02:00 every day
     scheduler.add_job(nightly_job, "cron", hour=2, minute=0, id="nightly_forecast")
     scheduler.start()
     logger.info("⏰ Đã đặt lịch nightly forecast 02:00 AM.")
     yield
-    # Shutdown
     scheduler.shutdown()
     logger.info("🛑 AI Service tắt.")
 
