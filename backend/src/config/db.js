@@ -28,6 +28,6 @@ export const connectDB = async () => {
     console.log("Kết nối Aiven PostgreSQL thành công!");
   } catch (error) {
     console.error("Không thể kết nối Aiven PostgreSQL:", error.message);
-    process.exit(1);
+    return Promise.resolve(); // Vẫn resolve để server có thể chạy, nhưng sẽ có lỗi khi truy cập DB
   }
 };
