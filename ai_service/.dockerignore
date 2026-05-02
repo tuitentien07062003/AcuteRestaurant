@@ -44,11 +44,11 @@ env/
 
 # Git
 .git/
-.gitignore
 
 # Docker
 Dockerfile
 docker-compose*.yml
+!requirements.txt
 
 # Documentation
 README.md

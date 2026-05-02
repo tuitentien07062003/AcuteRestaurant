@@ -14,7 +14,7 @@ WORKDIR /app
 # Stage 2: Install dependencies
 FROM base as dependencies
 
-COPY ./requirements.txt .
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Stage 3: Application
