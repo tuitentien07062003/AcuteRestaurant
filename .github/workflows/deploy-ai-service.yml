@@ -5,6 +5,7 @@ on:
     branches: [ "main" ]
     paths:
       - 'ai_service/**'
+      - '.github/workflows/**'
 
 jobs:
   docker-test-deploy:
