@@ -2,7 +2,7 @@ import Redis from 'ioredis';
 
 // Upstash Redis connection string
 // Format: redis://default:<password>@<host>:<port>
-const REDIS_URL = process.env.REDIS_URL || 'redis://default:gQAAAAAAAQSJAAIncDE4YmY2ODQxZmFlYTU0OGFhYmQ4ZmQxYzNmMDBiM2JjZnAxNjY2OTc@dynamic-fish-66697.upstash.io:6379';
+const REDIS_URL = process.env.REDIS_URL;
 
 const redis = new Redis(REDIS_URL, {
     tls: {

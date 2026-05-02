@@ -31,7 +31,8 @@ const allowedOrigins = [
   "http://localhost:5173",
   "http://127.0.0.1:5173",
   "http://localhost:5174",
-  "https://acute-restaurant.vercel.app"
+  "https://acute-restaurant.vercel.app",
+  "https://acute-restaurant-hq.vercel.app"
 ];
 
 const isProduction = process.env.NODE_ENV === "production" || process.env.RENDER;
