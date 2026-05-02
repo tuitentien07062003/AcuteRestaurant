@@ -22,11 +22,12 @@ jobs:
         run: |
           docker run -d -p 3000:3000 \
             --name backend-test-container \
+            -e DATABASE_URL="${{ secrets.DATABASE_URL_TEST }}" \
             -e OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:4318" \
             -e NODE_ENV="test" \
             backend-image
-          echo "Waiting for backend to initialize..."
-          sleep 15
+          echo "Đang đợi Backend kết nối DB và khởi động..."
+          sleep 20
 
       - name: Health check & Debug logs
         run: |
