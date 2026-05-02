@@ -48,6 +48,10 @@ app.use(cors({
   credentials: true
 }));
 
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok", service: "backend" });
+});
+
 app.use("/uploads", express.static(path.join(process.cwd(), "src/uploads")));
 app.use(express.json());
 
