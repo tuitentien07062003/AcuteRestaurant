@@ -190,11 +190,7 @@ const InventoryDashboard = () => {
   const handleUpdateStock = async () => {
     try {
       const payload = {
-        quantity: Number(updateForm.quantity),
-        type: updateForm.reason === 'NHAP_THEM' ? 'IN' : 'OUT',
-        reason: updateForm.reason,
-        note: updateForm.note,
-        updated_by: user?.id
+        quantity: Number(updateForm.quantity)
       }
       
       const itemId = selectedMaterial.item_id || selectedMaterial.id;
