@@ -1,5 +1,4 @@
-// src/pages/Admin/EmployeesDashboard.jsx
-import { useState } from 'react';
+import { useState } from "react";
 import { useAdminData } from "@/hooks/useAdmin";
 import useInit from "@/hooks/useInit";
 import { initAdminEmployees } from "@/init/employeeInit";
@@ -13,13 +12,12 @@ import EmployeeDetailDialog from "./EmployeeDetailDialog";
 const EmployeesDashboard = () => {
   const ctx = useAdminData();
   const { toggleEmployeeActive } = ctx;
-  
+
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
 
-  // Khởi tạo dữ liệu minh bạch theo phong cách POS
   useInit(() => {
     initAdminEmployees(ctx);
   }, []);
@@ -35,32 +33,32 @@ const EmployeesDashboard = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 max-w-7xl mx-auto">
       {/* Header & Stats */}
       <EmployeesStats onAddClick={() => setAddDialogOpen(true)} />
-      
-      {/* Table - Truyền data rõ ràng */}
-      <EmployeesTable 
+
+      {/* Table */}
+      <EmployeesTable
         onEditClick={handleEditClick}
         onDetailClick={handleDetailClick}
         onToggleActive={(emp) => toggleEmployeeActive(emp.id, !emp.active)}
       />
 
       {/* Dialogs */}
-      <EmployeeAddDialog 
-        isOpen={addDialogOpen} 
-        onClose={() => setAddDialogOpen(false)} 
+      <EmployeeAddDialog
+        isOpen={addDialogOpen}
+        onClose={() => setAddDialogOpen(false)}
       />
       {selectedEmployee && (
         <>
-          <EmployeeEditDialog 
+          <EmployeeEditDialog
             employee={selectedEmployee}
-            isOpen={editDialogOpen} 
-            onClose={() => setEditDialogOpen(false)} 
+            isOpen={editDialogOpen}
+            onClose={() => setEditDialogOpen(false)}
           />
-          <EmployeeDetailDialog 
+          <EmployeeDetailDialog
             employee={selectedEmployee}
-            isOpen={detailDialogOpen} 
+            isOpen={detailDialogOpen}
             onClose={() => setDetailDialogOpen(false)}
             onEdit={handleEditClick}
           />

@@ -40,8 +40,6 @@ export default function Login() {
     try {
       const data = await doLogin(ctx, form);
       const role = data.user.role;
-      // SM (Store Manager) or SUP (Supervisor) → Admin Dashboard
-      // CREW → POS
       if (role === "SM" || role === "SUP") {
         navigate("/admin");
       } else if (role === "CREW") {
@@ -57,59 +55,56 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
-      {/* Animated Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#0077b6] via-[#0096c7] to-[#00b4d8]">
-        {/* Decorative circles */}
-        <div className="absolute top-20 left-20 w-64 h-64 bg-white/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-20 w-96 h-96 bg-white/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-white/5 rounded-full blur-3xl"></div>
-        
-        {/* Pattern overlay */}
-        <div className="absolute inset-0 opacity-10" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }}></div>
-      </div>
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-slate-50">
+      {/* Background Decorative - Orange Theme */}
+      <div className="absolute top-0 left-0 w-full h-64 bg-[#F97316] rounded-b-[40px] opacity-5 pointer-events-none"></div>
+      <div className="absolute bottom-10 right-10 w-40 h-40 bg-[#F97316] rounded-full opacity-5 pointer-events-none"></div>
 
       {/* Login Card */}
-      <Card className="w-full max-w-md mx-4 relative z-10 shadow-2xl border-0 bg-white/95 backdrop-blur-sm animate-scale-in">
-        <CardHeader className="space-y-6 text-center pb-2">
+      <Card className="w-full max-w-md mx-4 relative z-10 shadow-xl border border-slate-100 bg-white rounded-2xl animate-scale-in">
+        <CardHeader className="space-y-6 text-center pb-2 pt-8">
           {/* Logo & Brand */}
           <div className="flex justify-center items-center gap-3">
-            <div className="w-16 h-16 bg-gradient-to-br from-[#0077b6] to-[#00b4d8] rounded-2xl flex items-center justify-center shadow-lg">
+            <div className="w-16 h-16 bg-[#F97316] rounded-2xl flex items-center justify-center shadow-md">
               <UtensilsCrossed className="w-8 h-8 text-white" />
             </div>
             <div className="text-left">
-              <h1 className="text-2xl font-bold text-[#0077b6] tracking-tight">Acute</h1>
-              <p className="text-xs text-gray-500 uppercase tracking-widest">Restaurant</p>
+              <h1 className="text-2xl font-bold text-[#F97316] tracking-tight">
+                Acute
+              </h1>
+              <p className="text-xs text-slate-500 uppercase tracking-widest font-semibold">
+                Restaurant
+              </p>
             </div>
           </div>
 
           <div className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-gray-800">
+            <CardTitle className="text-2xl font-bold text-slate-800">
               Chào mừng trở lại!
             </CardTitle>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-slate-500">
               Đăng nhập để tiếp tục làm việc
             </p>
           </div>
         </CardHeader>
 
         {/* Content */}
-        <CardContent className="space-y-5 pt-2">
+        <CardContent className="space-y-5 pt-2 pb-8 px-8">
           <form onSubmit={handleLogin} className="space-y-5">
             {/* Username */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Tên đăng nhập</label>
+              <label className="text-sm font-medium text-slate-700">
+                Tên đăng nhập
+              </label>
               <div className="relative">
                 <Input
                   name="username"
-                  className="bg-gray-50 border-gray-200 h-12 pl-4 pr-4 focus:ring-2 focus:ring-[#0077b6] focus:border-transparent transition-all"
+                  className="bg-slate-50 border-slate-200 h-12 pl-4 pr-4 focus:ring-2 focus:ring-[#F97316] focus:border-transparent transition-all"
                   placeholder="Nhập tên đăng nhập"
                   value={form.username}
                   onChange={handleChange}
                 />
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
                   <ChefHat size={18} />
                 </div>
               </div>
@@ -117,20 +112,22 @@ export default function Login() {
 
             {/* Password */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Mật khẩu</label>
+              <label className="text-sm font-medium text-slate-700">
+                Mật khẩu
+              </label>
               <div className="relative">
                 <Input
                   name="password"
                   value={form.password}
                   onChange={handleChange}
                   type={showPassword ? "text" : "password"}
-                  className="bg-gray-50 border-gray-200 h-12 pl-4 pr-12 focus:ring-2 focus:ring-[#0077b6] focus:border-transparent transition-all"
+                  className="bg-slate-50 border-slate-200 h-12 pl-4 pr-12 focus:ring-2 focus:ring-[#F97316] focus:border-transparent transition-all"
                   placeholder="Nhập mật khẩu"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#0077b6] transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#F97316] transition-colors"
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -149,26 +146,32 @@ export default function Login() {
             {/* Remember & Forgot */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Checkbox 
-                  id="remember" 
+                <Checkbox
+                  id="remember"
                   checked={rememberMe}
                   onCheckedChange={setRememberMe}
-                  className="border-gray-300 data-[state=checked]:bg-[#0077b6] data-[state=checked]:border-[#0077b6]"
+                  className="border-slate-300 data-[state=checked]:bg-[#F97316] data-[state=checked]:border-[#F97316]"
                 />
-                <label htmlFor="remember" className="text-sm text-gray-600 cursor-pointer">
+                <label
+                  htmlFor="remember"
+                  className="text-sm text-slate-600 cursor-pointer"
+                >
                   Ghi nhớ đăng nhập
                 </label>
               </div>
-              <a href="#" className="text-sm text-[#0077b6] hover:text-[#006699] font-medium transition-colors">
+              <a
+                href="#"
+                className="text-sm text-[#F97316] hover:text-[#EA580C] font-medium transition-colors"
+              >
                 Quên mật khẩu?
               </a>
             </div>
 
             {/* Button */}
             <Button
-              type="submit"   
+              type="submit"
               disabled={loading}
-              className="w-full h-12 bg-gradient-to-r from-[#0077b6] to-[#0096c7] hover:from-[#006699] hover:to-[#0077b6] cursor-pointer font-semibold text-base shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+              className="w-full h-12 bg-[#F97316] hover:bg-[#EA580C] cursor-pointer font-semibold text-base shadow-md transition-all transform hover:scale-[1.02] active:scale-[0.98] rounded-xl text-white"
             >
               {loading ? (
                 <div className="flex items-center gap-2">
@@ -185,8 +188,8 @@ export default function Login() {
           </form>
 
           {/* Footer */}
-          <div className="text-center pt-2">
-            <p className="text-xs text-gray-400">
+          <div className="text-center pt-4">
+            <p className="text-xs text-slate-400">
               © 2024 Acute Restaurant. All rights reserved.
             </p>
           </div>

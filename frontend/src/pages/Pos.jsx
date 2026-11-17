@@ -1,43 +1,36 @@
-import { useState, useContext, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import PosHeader from '@/components/PosHeader'
-import LeftSidebar from '@/components/LeftSidebar'
-import Order from '@/components/Order'
-import MenuOrder from '@/components/MenuOrder'
-import KitchenScreen from '@/components/KitchenScreen'
-import HistoryOrder from '@/components/HistoryOrder'
-import { useCategories } from '@/hooks/useCategories'
-import { GlobalContext } from '@/context/GlobalContext'
+import { useState, useContext, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import PosHeader from "@/components/PosHeader";
+import LeftSidebar from "@/components/LeftSidebar";
+import Order from "@/components/Order";
+import MenuOrder from "@/components/MenuOrder";
+import KitchenScreen from "@/components/KitchenScreen";
+import HistoryOrder from "@/components/HistoryOrder";
+import { useCategories } from "@/hooks/useCategories";
+import { GlobalContext } from "@/context/GlobalContext";
 
 const Pos = () => {
   const ctx = useContext(GlobalContext);
   const navigate = useNavigate();
-  
-  // Fetch categories using React Query
-  const { data: categories = [], isLoading: categoriesLoading } = useCategories();
 
-  // Local state for UI
+  const { data: categories = [], isLoading: categoriesLoading } =
+    useCategories();
+
   const [activeCategory, setActiveCategory] = useState(null);
-  const [activeComponent, setActiveComponent] = useState('menu');
+  const [activeComponent, setActiveComponent] = useState("menu");
   const [orderItems, setOrderItems] = useState([]);
 
-  // Set initial category when categories are loaded
   useEffect(() => {
     if (categories && categories.length > 0 && !activeCategory) {
-      console.log("[Pos] Setting initial category:", categories[0].code);
       setActiveCategory(categories[0].code);
     }
   }, [categories, activeCategory]);
 
   useEffect(() => {
-    console.log("[Pos] user:", ctx.user);
     if (ctx.user === null) {
-      // Wait a bit for auth check
       const timer = setTimeout(() => {
-        console.log("[Pos] after timeout, user:", ctx.user);
         if (!ctx.user) {
-          console.log("[Pos] redirecting to login");
-          navigate('/login');
+          navigate("/login");
         }
       }, 1000);
       return () => clearTimeout(timer);
@@ -45,63 +38,63 @@ const Pos = () => {
   }, [ctx.user, navigate]);
 
   if (!ctx.user) {
-    return <div>Loading...</div>; // Or a spinner
+    return (
+      <div className="flex h-screen items-center justify-center">
+        Loading...
+      </div>
+    );
   }
 
   const handleToOrder = (item) => {
-    setOrderItems(prev => {
-      const existingItem = prev.find(i => i.id === item.id);
-      return existingItem 
-        ? prev.map(i => i.id === item.id ? { ...i, qty: i.qty + 1 } : i)
+    setOrderItems((prev) => {
+      const existingItem = prev.find((i) => i.id === item.id);
+      return existingItem
+        ? prev.map((i) => (i.id === item.id ? { ...i, qty: i.qty + 1 } : i))
         : [...prev, { ...item, qty: 1 }];
-    })
-  }
+    });
+  };
 
   return (
-    <div className="h-screen flex overflow-hidden bg-gray-50">
-      {/* Left Sidebar - Fixed width */}
+    <div className="h-screen flex overflow-hidden bg-slate-50">
+      {/* Left Sidebar - Thu gọn */}
       <LeftSidebar onSelect={setActiveComponent} />
-      
-      {/* Main Content Area - Flexible */}
+
+      {/* Main Content Area - Mở rộng tối đa */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Header & Menu or Other Components */}
-        <div className="flex-1 flex flex-col min-h-0 px-4 pb-2">
-          {activeComponent === 'menu' && (
+        <div className="flex-1 flex flex-col min-h-0 px-3 pb-2">
+          {activeComponent === "menu" && (
             <>
-              <PosHeader 
+              <PosHeader
                 categories={categories}
                 activeCategory={activeCategory}
                 onCategoryChange={setActiveCategory}
                 isLoading={categoriesLoading}
               />
-              <div className="flex-1 min-h-0 overflow-y-auto py-3">
-                <MenuOrder
-                  category={activeCategory}
-                  onAdd={handleToOrder}
-                />
+              <div className="flex-1 min-h-0 overflow-y-auto py-2">
+                <MenuOrder category={activeCategory} onAdd={handleToOrder} />
               </div>
             </>
           )}
-          {activeComponent === 'history' && (
+          {activeComponent === "history" && (
             <div className="flex-1 min-h-0 overflow-y-auto">
               <HistoryOrder />
             </div>
           )}
-          {activeComponent === 'kitchen' && (
+          {activeComponent === "kitchen" && (
             <div className="flex-1 min-h-0">
               <KitchenScreen />
             </div>
           )}
         </div>
       </div>
-      
-      {/* Order Panel - Fixed width, full height */}
+
+      {/* Order Panel - Thanh toán */}
       <div className="h-full">
-        {activeComponent === 'menu' && (
+        {activeComponent === "menu" && (
           <Order items={orderItems} setItems={setOrderItems} />
         )}
       </div>
     </div>
-  )
-}
-export default Pos
+  );
+};
+export default Pos;

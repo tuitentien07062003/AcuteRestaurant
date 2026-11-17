@@ -1,76 +1,91 @@
-import { useState, useContext, useEffect } from "react"
-import { 
-  CreditCard, 
-  Search, 
-  Plus, 
+import { useState, useContext, useEffect } from "react";
+import {
   FileText,
+  Search,
+  Plus,
   CheckCircle,
   Clock,
   XCircle,
-  Download,
   Send,
   User,
   Calendar,
   DollarSign,
   Filter,
-  RefreshCw
-} from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Textarea } from "@/components/ui/textarea"
-import paymentRequestApi from "../../api/paymentRequestApi"
-import { GlobalContext } from "@/context/GlobalContext"
+  RefreshCw,
+  Trash2,
+} from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import paymentRequestApi from "../../api/paymentRequestApi";
+import { GlobalContext } from "@/context/GlobalContext";
 
 const generateInvoiceImageUrl = () => {
   const randomId = Math.floor(Math.random() * 1000);
   return `https://picsum.photos/600/400?random=${randomId}`;
-}
+};
 
 const statusConfig = {
-  pending: { label: "Chờ duyệt", color: "bg-yellow-100 text-yellow-700", icon: Clock },
-  PENDING: { label: "Chờ duyệt", color: "bg-yellow-100 text-yellow-700", icon: Clock },
-  sent: { label: "Đã gửi", color: "bg-blue-100 text-blue-700", icon: Send },
-  SENT: { label: "Đã gửi", color: "bg-blue-100 text-blue-700", icon: Send },
-  approved: { label: "Đã duyệt", color: "bg-green-100 text-green-700", icon: CheckCircle },
-  paid: { label: "Đã thanh toán", color: "bg-green-100 text-green-700", icon: CheckCircle },
-  PAID: { label: "Đã thanh toán", color: "bg-green-100 text-green-700", icon: CheckCircle },
-  rejected: { label: "Từ chối", color: "bg-red-100 text-red-700", icon: XCircle },
-  REJECTED: { label: "Từ chối", color: "bg-red-100 text-red-700", icon: XCircle },
-}
+  PENDING: {
+    label: "Chờ duyệt",
+    color: "bg-yellow-100 text-yellow-700 border-yellow-200",
+    icon: Clock,
+  },
+  SENT: {
+    label: "Đã gửi",
+    color: "bg-blue-100 text-blue-700 border-blue-200",
+    icon: Send,
+  },
+  PAID: {
+    label: "Đã thanh toán",
+    color: "bg-green-100 text-green-700 border-green-200",
+    icon: CheckCircle,
+  },
+  REJECTED: {
+    label: "Từ chối",
+    color: "bg-red-100 text-red-700 border-red-200",
+    icon: XCircle,
+  },
+};
 
 const PaymentRequestDashboard = () => {
-  const [paymentRequests, setPaymentRequests] = useState([])
-  const [searchTerm, setSearchTerm] = useState("")
-  const [filterStatus, setFilterStatus] = useState("all")
-  const [showForm, setShowForm] = useState(false)
-  const [creating, setCreating] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const { user } = useContext(GlobalContext)
+  const [paymentRequests, setPaymentRequests] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [showForm, setShowForm] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { user } = useContext(GlobalContext);
 
-  // Fetch payment requests from API
   const fetchPaymentRequests = async () => {
     try {
-      setLoading(true)
-      setError(null)
-      const response = await paymentRequestApi.getAll()
-      const requests = response?.data || []
-      setPaymentRequests(requests)
+      setLoading(true);
+      setError(null);
+      const response = await paymentRequestApi.getAll();
+      setPaymentRequests(response?.data || []);
     } catch (err) {
-      console.error('Lỗi khi tải phiếu mua hàng:', err)
-      setError('Không thể tải danh sách phiếu mua hàng')
+      setError("Không thể tải danh sách phiếu mua hàng");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  // Fetch data on mount
   useEffect(() => {
-    fetchPaymentRequests()
-  }, [])
+    fetchPaymentRequests();
+  }, []);
 
+  // STATE GIỮ NGUYÊN
   const [newRequest, setNewRequest] = useState({
     title: "",
     store_id: "",
@@ -84,35 +99,41 @@ const PaymentRequestDashboard = () => {
         quantity: 1,
         unit_price: "",
         invoice_photo_url: generateInvoiceImageUrl(),
-        note: ""
-      }
-    ]
-  })
+        note: "",
+      },
+    ],
+  });
 
   const [emailReport, setEmailReport] = useState({
     to: "acuterestaurant@company.com",
     subject: "Báo cáo phiếu mua hàng",
-    message: "Kính gửi HQ,\n\nXin gửi kèm phiếu mua hàng đã lập hôm nay. Vui lòng xem chi tiết và duyệt theo quy trình.\n\nTrân trọng,\nBan quản lý"
-  })
+    message:
+      "Kính gửi HQ,\n\nXin gửi kèm phiếu mua hàng đã lập hôm nay. Vui lòng xem chi tiết và duyệt theo quy trình.\n\nTrân trọng,\nBan quản lý",
+  });
 
+  // LOGIC GIỮ NGUYÊN
   const calculateDetailTotal = (detail) => {
-    const qty = Number(detail.quantity) || 0
-    const price = Number(detail.unit_price) || 0
-    return qty * price
-  }
+    const qty = Number(detail.quantity) || 0;
+    const price = Number(detail.unit_price) || 0;
+    return qty * price;
+  };
 
-  const calculateTotalAmount = () => {
-    return newRequest.details.reduce((sum, detail) => sum + calculateDetailTotal(detail), 0)
-  }
+  const calculateTotalAmount = () =>
+    newRequest.details.reduce(
+      (sum, detail) => sum + calculateDetailTotal(detail),
+      0,
+    );
 
   const handleDetailChange = (index, field, value) => {
-    const updatedDetails = [...newRequest.details]
-    updatedDetails[index] = { ...updatedDetails[index], [field]: value }
-    if (field === 'quantity' || field === 'unit_price') {
-      updatedDetails[index].total_price = calculateDetailTotal(updatedDetails[index])
+    const updatedDetails = [...newRequest.details];
+    updatedDetails[index] = { ...updatedDetails[index], [field]: value };
+    if (field === "quantity" || field === "unit_price") {
+      updatedDetails[index].total_price = calculateDetailTotal(
+        updatedDetails[index],
+      );
     }
-    setNewRequest({ ...newRequest, details: updatedDetails })
-  }
+    setNewRequest({ ...newRequest, details: updatedDetails });
+  };
 
   const handleAddDetailRow = () => {
     setNewRequest({
@@ -124,51 +145,47 @@ const PaymentRequestDashboard = () => {
           quantity: 1,
           unit_price: "",
           invoice_photo_url: generateInvoiceImageUrl(),
-          note: ""
-        }
-      ]
-    })
-  }
+          note: "",
+        },
+      ],
+    });
+  };
 
   const handleRemoveDetailRow = (index) => {
-    const updatedDetails = newRequest.details.filter((_, idx) => idx !== index)
-    setNewRequest({ ...newRequest, details: updatedDetails })
-  }
+    const updatedDetails = newRequest.details.filter((_, idx) => idx !== index);
+    setNewRequest({ ...newRequest, details: updatedDetails });
+  };
 
   const handleInvoiceFileChange = (index, file) => {
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      handleDetailChange(index, 'invoice_photo_url', reader.result)
-    }
-    reader.readAsDataURL(file)
-  }
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () =>
+      handleDetailChange(index, "invoice_photo_url", reader.result);
+    reader.readAsDataURL(file);
+  };
 
   const handleAttachmentFileChange = (file) => {
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      setNewRequest({ ...newRequest, attachment_url: reader.result })
-    }
-    reader.readAsDataURL(file)
-  }
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () =>
+      setNewRequest({ ...newRequest, attachment_url: reader.result });
+    reader.readAsDataURL(file);
+  };
 
   const handleCreateRequest = async () => {
-    const requesterId = user?.employee_id || "unknown"
-    const storeId = user?.store_id || 7062003
-    if (!newRequest.title || !newRequest.reason || newRequest.details.length === 0) {
-      alert('Vui lòng điền tiêu đề, lý do và một hoặc nhiều mặt hàng.')
-      return
+    const requesterId = user?.employee_id || "unknown";
+    const storeId = user?.store_id || 7062003;
+    if (
+      !newRequest.title ||
+      !newRequest.reason ||
+      newRequest.details.length === 0
+    ) {
+      alert("Vui lòng điền tiêu đề, lý do và một hoặc nhiều mặt hàng.");
+      return;
     }
-
     if (!requesterId || requesterId === "unknown") {
-      alert('Không thể xác định nhân viên. Vui lòng đăng nhập lại.')
-      return
-    }
-
-    if (!storeId) {
-      alert('Không thể xác định cửa hàng. Vui lòng đăng nhập lại.')
-      return
+      alert("Không thể xác định nhân viên. Vui lòng đăng nhập lại.");
+      return;
     }
 
     const requestPayload = {
@@ -177,23 +194,21 @@ const PaymentRequestDashboard = () => {
       reason: newRequest.reason,
       note: newRequest.note,
       attachment_url: newRequest.attachment_url,
-      details: newRequest.details.map(detail => ({
+      details: newRequest.details.map((detail) => ({
         item_name: detail.item_name,
         quantity: Number(detail.quantity) || 1,
         unit_price: Number(detail.unit_price) || 0,
         total_price: calculateDetailTotal(detail),
         invoice_photo_url: detail.invoice_photo_url,
-        note: detail.note
-      }))
-    }
+        note: detail.note,
+      })),
+    };
 
-    console.log("Dữ liệu chuẩn bị gửi:", requestPayload);
-
-    setCreating(true)
+    setCreating(true);
     try {
-      await paymentRequestApi.create(requestPayload)
-      alert('Phiếu mua hàng đã được tạo thành công!')
-      setShowForm(false)
+      await paymentRequestApi.create(requestPayload);
+      alert("Phiếu mua hàng đã được tạo thành công!");
+      setShowForm(false);
       setNewRequest({
         title: "",
         store_id: 1,
@@ -201,512 +216,545 @@ const PaymentRequestDashboard = () => {
         reason: "",
         note: "",
         attachment_url: "",
-        details: [{ item_name: "", quantity: 1, unit_price: "", invoice_photo_url: "", note: "" }]
-      })
-      // Refresh the list
-      await fetchPaymentRequests()
+        details: [
+          {
+            item_name: "",
+            quantity: 1,
+            unit_price: "",
+            invoice_photo_url: "",
+            note: "",
+          },
+        ],
+      });
+      await fetchPaymentRequests();
     } catch (error) {
-      console.error('Tạo phiếu thất bại', error)
-      alert('Không thể tạo phiếu. Vui lòng thử lại.')
+      alert("Không thể tạo phiếu. Vui lòng thử lại.");
     } finally {
-      setCreating(false)
+      setCreating(false);
     }
-  }
+  };
 
   const handleSendEmailReport = () => {
-    const subject = encodeURIComponent(emailReport.subject)
-    const body = encodeURIComponent(emailReport.message)
-    window.open(`mailto:${emailReport.to}?subject=${subject}&body=${body}`, '_blank')
-  }
+    const subject = encodeURIComponent(emailReport.subject);
+    const body = encodeURIComponent(emailReport.message);
+    window.open(
+      `mailto:${emailReport.to}?subject=${subject}&body=${body}`,
+      "_blank",
+    );
+  };
 
-  // Filter payment requests
-  const filteredRequests = paymentRequests.filter(req => {
-    const matchesSearch = 
-      (req.reason && req.reason.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (req.note && req.note.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (req.id && req.id.toLowerCase().includes(searchTerm.toLowerCase()))
-    const matchesStatus = filterStatus === "all" || req.status === filterStatus || req.status?.toUpperCase() === filterStatus.toUpperCase()
-    return matchesSearch && matchesStatus
-  })
+  const filteredRequests = paymentRequests.filter((req) => {
+    const matchesSearch =
+      (req.reason &&
+        req.reason.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (req.id && req.id.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesStatus =
+      filterStatus === "all" ||
+      req.status === filterStatus ||
+      req.status?.toUpperCase() === filterStatus.toUpperCase();
+    return matchesSearch && matchesStatus;
+  });
 
-  const stats = [
-    { 
-      label: "Chờ duyệt", 
-      value: paymentRequests.filter(r => r.status === "PENDING" || r.status === "pending").length, 
-      color: "text-yellow-600",
-      bgColor: "bg-yellow-50"
-    },
-    { 
-      label: "Đã gửi", 
-      value: paymentRequests.filter(r => r.status === "SENT" || r.status === "sent").length, 
-      color: "text-blue-600",
-      bgColor: "bg-blue-50"
-    },
-    { 
-      label: "Đã thanh toán", 
-      value: paymentRequests.filter(r => r.status === "PAID" || r.status === "paid").length, 
-      color: "text-green-600",
-      bgColor: "bg-green-50"
-    },
-    { 
-      label: "Tổng tiền", 
-      value: paymentRequests.reduce((sum, r) => sum + (Number(r.total_amount) || 0), 0), 
-      color: "text-[#0077b6]",
-      bgColor: "bg-blue-50",
-      isCurrency: true
-    },
-  ]
-
-  const formatCurrency = (amount) => {
-    return Number(amount || 0).toLocaleString("vi-VN") + " đ"
-  }
-
+  const formatCurrency = (amount) =>
+    Number(amount || 0).toLocaleString("vi-VN") + " đ";
   const formatDate = (dateStr) => {
-    if (!dateStr) return "-"
+    if (!dateStr) return "-";
     return new Date(dateStr).toLocaleDateString("vi-VN", {
       day: "2-digit",
       month: "2-digit",
-      year: "numeric"
-    })
-  }
+      year: "numeric",
+    });
+  };
+
+  const stats = [
+    {
+      label: "Chờ duyệt",
+      value: paymentRequests.filter((r) => r.status === "PENDING").length,
+      color: "text-yellow-600",
+      bg: "bg-yellow-50",
+    },
+    {
+      label: "Đã gửi",
+      value: paymentRequests.filter((r) => r.status === "SENT").length,
+      color: "text-blue-600",
+      bg: "bg-blue-50",
+    },
+    {
+      label: "Đã thanh toán",
+      value: paymentRequests.filter((r) => r.status === "PAID").length,
+      color: "text-green-600",
+      bg: "bg-green-50",
+    },
+    {
+      label: "Tổng tiền",
+      value: formatCurrency(
+        paymentRequests.reduce(
+          (sum, r) => sum + (Number(r.total_amount) || 0),
+          0,
+        ),
+      ),
+      color: "text-[#F97316]",
+      bg: "bg-orange-50",
+    },
+  ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-[#0077b6]">Phiếu mua hàng</h2>
-          <p className="text-gray-500">Lập phiếu đề nghị mua hàng gấp và lưu trữ hoá đơn</p>
+          <h2 className="text-2xl font-bold text-slate-800">
+            Phiếu thanh toán
+          </h2>
+          <p className="text-slate-500 mt-1">
+            Quản lý đề xuất chi phí và lưu trữ hóa đơn
+          </p>
         </div>
-        
-        <Button 
-          className="bg-[#0077b6] hover:bg-[#006699]"
+        <Button
+          className="bg-[#F97316] hover:bg-[#EA580C] rounded-xl shadow-sm font-semibold"
           onClick={() => setShowForm(!showForm)}
         >
-          <Plus size={18} className="mr-2" />
-          Tạo phiếu mới
+          <Plus size={18} className="mr-2" />{" "}
+          {showForm ? "Đóng Form" : "Tạo phiếu mới"}
         </Button>
       </div>
-
-      {/* Create Form */}
-      {showForm && (
-        <div className="space-y-4">
-          <Card className="border-2 border-[#0077b6]">
-            <CardHeader>
-              <CardTitle className="text-lg font-semibold">Lập phiếu mua hàng</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 xl:grid-cols-[2fr_1fr] gap-6">
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Tiêu đề phiếu</label>
-                      <Input
-                        placeholder="Nhập tiêu đề phiếu mua hàng..."
-                        value={newRequest.title}
-                        onChange={(e) => setNewRequest({ ...newRequest, title: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Lý do</label>
-                      <Input
-                        placeholder="Nhập lý do mua hàng gấp..."
-                        value={newRequest.reason}
-                        onChange={(e) => setNewRequest({ ...newRequest, reason: e.target.value })}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Attached Invoice URL</label>
-                      <Input
-                        placeholder="URL hóa đơn điện tử hoặc scan..."
-                        value={newRequest.attachment_url}
-                        onChange={(e) => setNewRequest({ ...newRequest, attachment_url: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Upload hóa đơn scan</label>
-                      <input
-                        type="file"
-                        accept="image/*,application/pdf"
-                        onChange={(e) => handleAttachmentFileChange(e.target.files?.[0])}
-                        className="w-full text-sm"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Ghi chú</label>
-                    <Textarea
-                      placeholder="Ghi chú thêm cho phiếu mua hàng..."
-                      value={newRequest.note}
-                      onChange={(e) => setNewRequest({ ...newRequest, note: e.target.value })}
-                      rows={3}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Mặt hàng cần mua</label>
-                    <div className="space-y-3">
-                      {newRequest.details.map((detail, index) => (
-                        <Card key={index} className="border border-slate-200 bg-slate-50">
-                          <CardContent className="grid grid-cols-1 xl:grid-cols-[2fr_1fr_1fr_1fr] gap-3 items-center">
-                            <div className="space-y-2">
-                              <label className="text-xs text-slate-500">Tên mặt hàng</label>
-                              <Input
-                                placeholder="VD: Gạo, dầu ăn..."
-                                value={detail.item_name}
-                                onChange={(e) => handleDetailChange(index, 'item_name', e.target.value)}
-                              />
-                            </div>
-
-                            <div className="space-y-2">
-                              <label className="text-xs text-slate-500">Số lượng</label>
-                              <Input
-                                type="number"
-                                min="1"
-                                value={detail.quantity}
-                                onChange={(e) => handleDetailChange(index, 'quantity', e.target.value)}
-                              />
-                            </div>
-
-                            <div className="space-y-2">
-                              <label className="text-xs text-slate-500">Đơn giá</label>
-                              <Input
-                                type="number"
-                                min="0"
-                                step="1000"
-                                value={detail.unit_price}
-                                onChange={(e) => handleDetailChange(index, 'unit_price', e.target.value)}
-                              />
-                            </div>
-
-                            <div className="space-y-2">
-                              <label className="text-xs text-slate-500">Tổng giá</label>
-                              <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700">
-                                {calculateDetailTotal(detail).toLocaleString('vi-VN')} đ
-                              </div>
-                            </div>
-
-                            <div className="space-y-2 xl:col-span-2">
-                              <label className="text-xs text-slate-500">Hoá đơn / scan</label>
-                              <div className="flex items-center gap-2">
-                                <Input
-                                  placeholder="URL hoá đơn..."
-                                  value={detail.invoice_photo_url}
-                                  onChange={(e) => handleDetailChange(index, 'invoice_photo_url', e.target.value)}
-                                />
-                                <input
-                                  type="file"
-                                  accept="image/*,application/pdf"
-                                  onChange={(e) => handleInvoiceFileChange(index, e.target.files?.[0])}
-                                  className="text-sm"
-                                />
-                              </div>
-                            </div>
-
-                            <div className="space-y-2 xl:col-span-2">
-                              <label className="text-xs text-slate-500">Ghi chú</label>
-                              <Input
-                                placeholder="Ghi chú cho mặt hàng..."
-                                value={detail.note}
-                                onChange={(e) => handleDetailChange(index, 'note', e.target.value)}
-                              />
-                            </div>
-
-                            <div className="flex justify-end xl:col-span-4">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleRemoveDetailRow(index)}
-                                className="text-red-600"
-                              >
-                                Xóa
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                    <Button variant="outline" size="sm" onClick={handleAddDetailRow}>
-                      <Plus size={16} /> Thêm mặt hàng
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
-                    <p className="text-sm text-slate-500 mb-3">Tổng hợp phiếu</p>
-                    <div className="space-y-3 text-slate-700">
-                      <div className="flex items-center justify-between">
-                        <span>Ngày lập</span>
-                        <span>{new Date().toLocaleDateString('vi-VN')}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span>Số mặt hàng</span>
-                        <span>{newRequest.details.length}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span>Tổng tiền dự kiến</span>
-                        <span className="font-semibold">{calculateTotalAmount().toLocaleString('vi-VN')} đ</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span>Trạng thái</span>
-                        <Badge className="bg-yellow-100 text-yellow-700">Chờ duyệt</Badge>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="rounded-3xl border border-slate-200 p-5">
-                    <p className="text-sm text-slate-500 mb-3">Thư báo cáo HQ</p>
-                    <div className="space-y-3 text-sm text-slate-600">
-                      <p>Trong EmailJS bạn sẽ chỉ cần map các trường:</p>
-                      <ul className="list-disc pl-5 space-y-1">
-                        <li><strong>to</strong>: địa chỉ HQ</li>
-                        <li><strong>subject</strong>: tiêu đề báo cáo</li>
-                        <li><strong>message</strong>: nội dung chi tiết phiếu</li>
-                        <li><strong>attachment_url</strong>: đường dẫn hóa đơn</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-between items-center gap-3 mt-6">
-                <div className="flex-1">
-                  {newRequest.attachment_url && (
-                    <div className="rounded-2xl border border-slate-200 overflow-hidden bg-white">
-                      <img
-                        src={newRequest.attachment_url}
-                        alt="Invoice preview"
-                        className="w-full max-h-64 object-cover"
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-3 mt-4">
-                <Button variant="outline" onClick={() => setShowForm(false)}>
-                  Hủy
-                </Button>
-                <Button
-                  className="bg-[#0077b6] hover:bg-[#006699]"
-                  onClick={handleCreateRequest}
-                  disabled={creating || !newRequest.title || !newRequest.reason}
-                >
-                  <Send size={18} className="mr-2" />
-                  Lưu phiếu
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg font-semibold">Mail báo cáo HQ</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-3">
-                  <label className="text-sm font-medium">Gửi tới</label>
-                  <Input
-                    value={emailReport.to}
-                    onChange={(e) => setEmailReport({ ...emailReport, to: e.target.value })}
-                    placeholder="hq@company.com"
-                  />
-                </div>
-                <div className="space-y-3">
-                  <label className="text-sm font-medium">Tiêu đề</label>
-                  <Input
-                    value={emailReport.subject}
-                    onChange={(e) => setEmailReport({ ...emailReport, subject: e.target.value })}
-                    placeholder="Email báo cáo phiếu mua hàng"
-                  />
-                </div>
-              </div>
-              <div className="space-y-3 mt-4">
-                <label className="text-sm font-medium">Nội dung email</label>
-                <Textarea
-                  value={emailReport.message}
-                  onChange={(e) => setEmailReport({ ...emailReport, message: e.target.value })}
-                  rows={6}
-                />
-              </div>
-              <div className="flex justify-end gap-3 mt-4">
-                <Button variant="outline" onClick={() => setEmailReport({ ...emailReport, subject: `Báo cáo phiếu mua hàng - ${newRequest.title}`, message: emailReport.message })}>
-                  Đặt lại mẫu
-                </Button>
-                <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleSendEmailReport}>
-                  Gửi báo cáo HQ
-                </Button>
-              </div>
-              <p className="mt-3 text-sm text-slate-500">
-                UI này đã chuẩn bị sẵn cho EmailJS. Khi tích hợp EmailJS, bạn chỉ cần thay chức năng `handleSendEmailReport` bằng lời gọi EmailJS và dùng các trường `to`, `subject`, `message`.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {stats.map((stat, index) => (
-          <Card key={index} className="hover:shadow-lg transition-shadow">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-500">{stat.label}</p>
-                  <p className={`text-2xl font-bold ${stat.color}`}>
-                    {stat.isCurrency ? formatCurrency(stat.value) : stat.value}
-                  </p>
-                </div>
-                <div className={`w-12 h-12 ${stat.bgColor} rounded-xl flex items-center justify-center`}>
-                  {index === 0 ? <Clock className={stat.color} size={24} /> :
-                   index === 1 ? <Send className={stat.color} size={24} /> :
-                   index === 2 ? <CheckCircle className={stat.color} size={24} /> :
-                   <DollarSign className={stat.color} size={24} />}
-                </div>
-              </div>
+          <Card
+            key={index}
+            className="hover:shadow-md transition-shadow border-slate-200 rounded-2xl"
+          >
+            <CardContent className="p-5">
+              <p className="text-sm font-medium text-slate-500 mb-1">
+                {stat.label}
+              </p>
+              <p className={`text-2xl font-bold ${stat.color}`}>{stat.value}</p>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-wrap gap-4 items-center">
-            {/* Search */}
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-              <Input
-                placeholder="Tìm kiếm phiếu..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+      {/* CREATE FORM (Chia khối rõ ràng) */}
+      {showForm && (
+        <Card className="border-orange-200 shadow-md rounded-2xl animate-in fade-in slide-in-from-top-4 duration-300">
+          <CardHeader className="bg-orange-50/50 border-b border-orange-100 rounded-t-2xl p-5">
+            <CardTitle className="text-lg font-bold text-[#F97316] flex items-center gap-2">
+              <FileText size={20} /> Lập phiếu mua hàng mới
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="grid grid-cols-1 xl:grid-cols-[2fr_1fr] gap-8">
+              {/* Cột Trái: Thông tin phiếu */}
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+                      Tiêu đề phiếu <span className="text-red-500">*</span>
+                    </label>
+                    <Input
+                      placeholder="VD: Mua nguyên vật liệu tuần 1..."
+                      value={newRequest.title}
+                      onChange={(e) =>
+                        setNewRequest({ ...newRequest, title: e.target.value })
+                      }
+                      className="bg-slate-50 border-slate-200 rounded-xl focus:ring-[#F97316]"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+                      Lý do mua hàng <span className="text-red-500">*</span>
+                    </label>
+                    <Input
+                      placeholder="VD: Cửa hàng sắp hết thịt..."
+                      value={newRequest.reason}
+                      onChange={(e) =>
+                        setNewRequest({ ...newRequest, reason: e.target.value })
+                      }
+                      className="bg-slate-50 border-slate-200 rounded-xl focus:ring-[#F97316]"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+                      Link hóa đơn đính kèm
+                    </label>
+                    <Input
+                      placeholder="URL hóa đơn..."
+                      value={newRequest.attachment_url}
+                      onChange={(e) =>
+                        setNewRequest({
+                          ...newRequest,
+                          attachment_url: e.target.value,
+                        })
+                      }
+                      className="bg-slate-50 border-slate-200 rounded-xl focus:ring-[#F97316]"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+                      Upload hóa đơn (Ảnh/PDF)
+                    </label>
+                    <Input
+                      type="file"
+                      accept="image/*,application/pdf"
+                      onChange={(e) =>
+                        handleAttachmentFileChange(e.target.files?.[0])
+                      }
+                      className="bg-slate-50 border-slate-200 rounded-xl focus:ring-[#F97316] file:bg-orange-50 file:text-[#F97316] file:border-0 file:rounded-md file:mr-4"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+                    Ghi chú thêm
+                  </label>
+                  <Textarea
+                    placeholder="Ghi chú cho phiếu..."
+                    value={newRequest.note}
+                    onChange={(e) =>
+                      setNewRequest({ ...newRequest, note: e.target.value })
+                    }
+                    rows={2}
+                    className="bg-slate-50 border-slate-200 rounded-xl focus:ring-[#F97316] resize-none"
+                  />
+                </div>
+
+                {/* Chi tiết mặt hàng */}
+                <div className="pt-4 border-t border-slate-100">
+                  <div className="flex justify-between items-center mb-3">
+                    <label className="text-sm font-bold text-slate-800">
+                      Danh sách mặt hàng
+                    </label>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleAddDetailRow}
+                      className="text-[#F97316] border-orange-200 hover:bg-orange-50 rounded-lg h-8"
+                    >
+                      <Plus size={14} className="mr-1" /> Thêm dòng
+                    </Button>
+                  </div>
+
+                  <div className="space-y-3">
+                    {newRequest.details.map((detail, index) => (
+                      <div
+                        key={index}
+                        className="grid grid-cols-12 gap-3 items-end bg-slate-50 p-3 rounded-xl border border-slate-200"
+                      >
+                        <div className="col-span-12 md:col-span-4">
+                          <label className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">
+                            Tên mặt hàng
+                          </label>
+                          <Input
+                            placeholder="VD: Gạo ST25"
+                            value={detail.item_name}
+                            onChange={(e) =>
+                              handleDetailChange(
+                                index,
+                                "item_name",
+                                e.target.value,
+                              )
+                            }
+                            className="h-9 bg-white"
+                          />
+                        </div>
+                        <div className="col-span-4 md:col-span-2">
+                          <label className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">
+                            Số lượng
+                          </label>
+                          <Input
+                            type="number"
+                            min="1"
+                            value={detail.quantity}
+                            onChange={(e) =>
+                              handleDetailChange(
+                                index,
+                                "quantity",
+                                e.target.value,
+                              )
+                            }
+                            className="h-9 bg-white"
+                          />
+                        </div>
+                        <div className="col-span-4 md:col-span-3">
+                          <label className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">
+                            Đơn giá
+                          </label>
+                          <Input
+                            type="number"
+                            min="0"
+                            step="1000"
+                            value={detail.unit_price}
+                            onChange={(e) =>
+                              handleDetailChange(
+                                index,
+                                "unit_price",
+                                e.target.value,
+                              )
+                            }
+                            className="h-9 bg-white"
+                          />
+                        </div>
+                        <div className="col-span-4 md:col-span-2">
+                          <label className="text-[10px] font-semibold text-slate-500 uppercase mb-1 block">
+                            Thành tiền
+                          </label>
+                          <div className="h-9 flex items-center px-3 bg-orange-50 text-[#F97316] font-bold text-sm rounded-md border border-orange-100">
+                            {formatCurrency(calculateDetailTotal(detail))}
+                          </div>
+                        </div>
+                        <div className="col-span-12 md:col-span-1 flex justify-end">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRemoveDetailRow(index)}
+                            className="h-9 w-9 text-red-500 hover:bg-red-50 hover:text-red-600 rounded-md"
+                          >
+                            <Trash2 size={16} />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Cột Phải: Tổng hợp & Mail */}
+              <div className="space-y-4">
+                <div className="bg-slate-50 rounded-2xl p-5 border border-slate-200">
+                  <h4 className="font-bold text-slate-800 mb-4 border-b border-slate-200 pb-2">
+                    Tổng hợp phiếu
+                  </h4>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Ngày lập</span>
+                      <span className="font-semibold">
+                        {new Date().toLocaleDateString("vi-VN")}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Số mặt hàng</span>
+                      <span className="font-semibold">
+                        {newRequest.details.length}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center pt-3 border-t border-slate-200 mt-2">
+                      <span className="text-slate-700 font-bold">
+                        Tổng tiền
+                      </span>
+                      <span className="text-xl font-black text-[#F97316]">
+                        {formatCurrency(calculateTotalAmount())}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+                  <h4 className="font-bold text-slate-800 mb-3 flex items-center gap-2 text-sm">
+                    <Send size={16} className="text-[#F97316]" /> Email báo cáo
+                    HQ
+                  </h4>
+                  <div className="space-y-3">
+                    <Input
+                      value={emailReport.to}
+                      onChange={(e) =>
+                        setEmailReport({ ...emailReport, to: e.target.value })
+                      }
+                      placeholder="Email người nhận..."
+                      className="h-9 text-sm bg-slate-50 border-slate-200"
+                    />
+                    <Input
+                      value={emailReport.subject}
+                      onChange={(e) =>
+                        setEmailReport({
+                          ...emailReport,
+                          subject: e.target.value,
+                        })
+                      }
+                      placeholder="Tiêu đề..."
+                      className="h-9 text-sm bg-slate-50 border-slate-200"
+                    />
+                    <Textarea
+                      value={emailReport.message}
+                      onChange={(e) =>
+                        setEmailReport({
+                          ...emailReport,
+                          message: e.target.value,
+                        })
+                      }
+                      rows={3}
+                      className="text-sm bg-slate-50 border-slate-200 resize-none"
+                    />
+                    <Button
+                      onClick={handleSendEmailReport}
+                      className="w-full bg-slate-800 hover:bg-slate-900 text-white rounded-xl h-9"
+                    >
+                      Gửi Email
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* Status Filter */}
-            <div className="flex items-center gap-2">
-              <Filter size={18} className="text-gray-500" />
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="border rounded-lg px-3 py-2 text-sm bg-white"
+            <div className="flex justify-end gap-3 mt-8 pt-4 border-t border-slate-100">
+              <Button
+                variant="outline"
+                onClick={() => setShowForm(false)}
+                className="rounded-xl border-slate-200 px-6"
               >
-                <option value="all">Tất cả</option>
-                <option value="PENDING">Chờ duyệt</option>
-                <option value="SENT">Đã gửi</option>
-                <option value="PAID">Đã thanh toán</option>
-                <option value="REJECTED">Từ chối</option>
-              </select>
+                Hủy
+              </Button>
+              <Button
+                className="bg-[#F97316] hover:bg-[#EA580C] rounded-xl px-8 font-bold shadow-sm"
+                onClick={handleCreateRequest}
+                disabled={creating}
+              >
+                <Send size={18} className="mr-2" />{" "}
+                {creating ? "Đang lưu..." : "Lưu phiếu"}
+              </Button>
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Filter & Search */}
+      <Card className="border-slate-200 shadow-sm rounded-2xl">
+        <CardContent className="p-4 flex flex-col md:flex-row gap-4 items-center justify-between">
+          <div className="relative w-full max-w-md">
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+              size={18}
+            />
+            <Input
+              placeholder="Tìm kiếm phiếu..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 bg-slate-50 border-slate-200 rounded-xl focus:ring-[#F97316]"
+            />
+          </div>
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            <Filter size={18} className="text-slate-400" />
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="border border-slate-200 rounded-xl px-3 py-2 text-sm bg-slate-50 font-medium text-slate-700 outline-none focus:ring-2 focus:ring-[#F97316] w-full md:w-auto"
+            >
+              <option value="all">Tất cả trạng thái</option>
+              <option value="PENDING">Chờ duyệt</option>
+              <option value="SENT">Đã gửi</option>
+              <option value="PAID">Đã thanh toán</option>
+              <option value="REJECTED">Từ chối</option>
+            </select>
+            <Button
+              variant="outline"
+              onClick={fetchPaymentRequests}
+              disabled={loading}
+              className="rounded-xl border-slate-200 shadow-sm shrink-0"
+            >
+              <RefreshCw
+                size={18}
+                className={`text-slate-500 ${loading ? "animate-spin" : ""}`}
+              />
+            </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Payment Requests List */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg font-semibold">Danh sách phiếu mua hàng</CardTitle>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={fetchPaymentRequests}
-            disabled={loading}
-          >
-            <RefreshCw size={16} className={`mr-2 ${loading ? 'animate-spin' : ''}`} />
-            Đồng bộ
-          </Button>
-        </CardHeader>
-        <CardContent>
+      {/* Table List */}
+      <Card className="border-slate-200 shadow-sm rounded-2xl overflow-hidden">
+        <CardContent className="p-0">
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-              {error}
-            </div>
+            <div className="p-4 bg-red-50 text-red-600 text-sm">{error}</div>
           )}
-          
-          {loading && paymentRequests.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-gray-500">Đang tải dữ liệu...</p>
+
+          {loading ? (
+            <div className="text-center py-16">
+              <RefreshCw
+                className="animate-spin mx-auto text-[#F97316]"
+                size={24}
+              />
             </div>
-          ) : paymentRequests.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-gray-500">Chưa có phiếu mua hàng nào</p>
+          ) : filteredRequests.length === 0 ? (
+            <div className="text-center py-16 text-slate-500">
+              Không có phiếu nào
             </div>
           ) : (
-            <div className="grid gap-3">
-              {filteredRequests.map((req) => {
-                const statusInfo = statusConfig[req.status] || statusConfig.PENDING
-                const StatusIcon = statusInfo.icon
-                
-                return (
-                  <div 
-                    key={req.id} 
-                    className="flex items-center justify-between p-4 border rounded-xl hover:shadow-md transition-shadow bg-white"
-                  >
-                    <div className="flex items-center gap-4 flex-1">
-                      <div className="bg-blue-50 text-blue-600 w-12 h-12 rounded-xl flex items-center justify-center">
-                        <FileText size={24} />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-medium text-gray-800">{req.reason || req.title || 'Phiếu mua hàng'}</h3>
-                        <div className="flex items-center gap-3 mt-1 flex-wrap">
-                          {req.requester && (
-                            <span className="text-sm text-gray-500 flex items-center gap-1">
-                              <User size={14} />
-                              {typeof req.requester === 'object' ? req.requester.full_name : req.requester}
-                            </span>
-                          )}
-                          {req.request_date && (
-                            <>
-                              <span className="text-sm text-gray-400">•</span>
-                              <span className="text-sm text-gray-500 flex items-center gap-1">
-                                <Calendar size={14} />
-                                {formatDate(req.request_date)}
-                              </span>
-                            </>
-                          )}
+            <Table>
+              <TableHeader className="bg-slate-50">
+                <TableRow>
+                  <TableHead className="font-semibold text-slate-700">
+                    Nội dung / Lý do
+                  </TableHead>
+                  <TableHead className="font-semibold text-slate-700">
+                    Người gửi
+                  </TableHead>
+                  <TableHead className="font-semibold text-slate-700">
+                    Ngày lập
+                  </TableHead>
+                  <TableHead className="font-semibold text-slate-700 text-right">
+                    Tổng tiền
+                  </TableHead>
+                  <TableHead className="font-semibold text-slate-700 text-center">
+                    Trạng thái
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredRequests.map((req) => {
+                  const statusInfo =
+                    statusConfig[req.status] || statusConfig.PENDING;
+                  const StatusIcon = statusInfo.icon;
+
+                  return (
+                    <TableRow
+                      key={req.id}
+                      className="hover:bg-slate-50 transition-colors"
+                    >
+                      <TableCell>
+                        <div className="font-bold text-slate-800 line-clamp-1">
+                          {req.reason}
                         </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <p className="font-bold text-[#0077b6] text-lg">
-                          {req.total_amount ? formatCurrency(req.total_amount) : '0 đ'}
-                        </p>
-                        <p className="text-xs text-gray-400">
-                          {req.reviewed_at ? `Duyệt: ${formatDate(req.reviewed_at)}` : "-"}
-                        </p>
-                      </div>
-                      
-                      <Badge className={statusInfo.color}>
-                        <StatusIcon size={14} className="mr-1" />
-                        {statusInfo.label}
-                      </Badge>
-                      
-                      {req.attachment_url && (
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <Download size={16} className="text-gray-600" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
+                        <div className="text-xs text-slate-500">
+                          Mã: #{req.id.slice(0, 8)}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1.5 text-slate-700 font-medium">
+                          <User size={14} className="text-slate-400" />
+                          {typeof req.requester === "object"
+                            ? req.requester.full_name
+                            : req.requester || "-"}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-slate-500">
+                        <div className="flex items-center gap-1.5">
+                          <Calendar size={14} className="text-slate-400" />
+                          {formatDate(req.request_date)}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right font-bold text-[#F97316]">
+                        {formatCurrency(req.total_amount)}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge
+                          className={`${statusInfo.color} border px-2.5 py-1 rounded-md text-xs`}
+                        >
+                          <StatusIcon size={12} className="mr-1" />{" "}
+                          {statusInfo.label}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
           )}
         </CardContent>
       </Card>
     </div>
-  )
-}
+  );
+};
 
-export default PaymentRequestDashboard
-
-
+export default PaymentRequestDashboard;

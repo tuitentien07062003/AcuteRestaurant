@@ -1,12 +1,10 @@
 import React from "react";
 import { Page, Text, View, Document, StyleSheet } from "@react-pdf/renderer";
 
-// Use default Helvetica font (built-in)
+const PRIMARY_COLOR = "#F97316"; // Màu Cam San Hô
+
 const styles = StyleSheet.create({
-  page: {
-    padding: 30,
-    backgroundColor: "#ffffff",
-  },
+  page: { padding: 30, backgroundColor: "#ffffff" },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -14,60 +12,28 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     paddingBottom: 15,
     borderBottomWidth: 2,
-    borderBottomColor: "#0077b6",
+    borderBottomColor: PRIMARY_COLOR,
   },
-  brandContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
+  brandContainer: { flexDirection: "row", alignItems: "center", gap: 10 },
   brandIcon: {
     width: 30,
     height: 30,
-    backgroundColor: "#0077b6",
+    backgroundColor: PRIMARY_COLOR,
     borderRadius: 6,
     justifyContent: "center",
     alignItems: "center",
   },
-  brandText: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#0077b6",
-  },
-  brandSubtext: {
-    fontSize: 10,
-    color: "#666666",
-  },
-  invoiceTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#333333",
-  },
-  infoSection: {
-    marginBottom: 20,
-  },
-  infoRow: {
-    flexDirection: "row",
-    marginBottom: 8,
-  },
-  infoLabel: {
-    width: 100,
-    fontSize: 10,
-    color: "#666666",
-  },
-  infoValue: {
-    flex: 1,
-    fontSize: 11,
-    color: "#333333",
-    fontWeight: "bold",
-  },
-  table: {
-    marginTop: 10,
-    marginBottom: 20,
-  },
+  brandText: { fontSize: 20, fontWeight: "bold", color: PRIMARY_COLOR },
+  brandSubtext: { fontSize: 10, color: "#666666" },
+  invoiceTitle: { fontSize: 24, fontWeight: "bold", color: "#333333" },
+  infoSection: { marginBottom: 20 },
+  infoRow: { flexDirection: "row", marginBottom: 8 },
+  infoLabel: { width: 100, fontSize: 10, color: "#666666" },
+  infoValue: { flex: 1, fontSize: 11, color: "#333333", fontWeight: "bold" },
+  table: { marginTop: 10, marginBottom: 20 },
   tableHeader: {
     flexDirection: "row",
-    backgroundColor: "#0077b6",
+    backgroundColor: PRIMARY_COLOR,
     paddingVertical: 8,
     paddingHorizontal: 10,
     borderTopLeftRadius: 4,
@@ -101,7 +67,12 @@ const styles = StyleSheet.create({
   itemName: { fontSize: 10, color: "#333333" },
   itemQty: { fontSize: 10, color: "#333333", textAlign: "center" },
   itemPrice: { fontSize: 10, color: "#333333", textAlign: "right" },
-  itemTotal: { fontSize: 10, fontWeight: "bold", color: "#0077b6", textAlign: "right" },
+  itemTotal: {
+    fontSize: 10,
+    fontWeight: "bold",
+    color: PRIMARY_COLOR,
+    textAlign: "right",
+  },
   summarySection: {
     marginTop: 20,
     paddingTop: 15,
@@ -113,35 +84,20 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 8,
   },
-  summaryLabel: {
-    fontSize: 11,
-    color: "#666666",
-  },
-  summaryValue: {
-    fontSize: 12,
-    fontWeight: "bold",
-    color: "#333333",
-  },
+  summaryLabel: { fontSize: 11, color: "#666666" },
+  summaryValue: { fontSize: 12, fontWeight: "bold", color: "#333333" },
   totalRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginTop: 10,
     paddingTop: 10,
-    backgroundColor: "#0077b6",
+    backgroundColor: PRIMARY_COLOR,
     paddingVertical: 12,
     paddingHorizontal: 15,
     borderRadius: 4,
   },
-  totalLabel: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#ffffff",
-  },
-  totalValue: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#ffffff",
-  },
+  totalLabel: { fontSize: 14, fontWeight: "bold", color: "#ffffff" },
+  totalValue: { fontSize: 16, fontWeight: "bold", color: "#ffffff" },
   footer: {
     position: "absolute",
     bottom: 30,
@@ -188,7 +144,6 @@ const getStatusStyle = (status) => {
   return statusStyles[status] || { bg: "#E5E7EB", color: "#374151" };
 };
 
-// Create PDF Document
 const createBillDocument = (bill, details, storeName = "Acute Restaurant") => {
   const statusStyle = getStatusStyle(bill?.status);
   const discount = Number(bill?.discount_amount || 0);
@@ -198,12 +153,15 @@ const createBillDocument = (bill, details, storeName = "Acute Restaurant") => {
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        {/* Header */}
         <View style={styles.header}>
           <View>
             <View style={styles.brandContainer}>
               <View style={styles.brandIcon}>
-                <Text style={{ color: "#ffffff", fontSize: 14, fontWeight: "bold" }}>A</Text>
+                <Text
+                  style={{ color: "#ffffff", fontSize: 14, fontWeight: "bold" }}
+                >
+                  A
+                </Text>
               </View>
               <View>
                 <Text style={styles.brandText}>{storeName}</Text>
@@ -219,7 +177,6 @@ const createBillDocument = (bill, details, storeName = "Acute Restaurant") => {
           </View>
         </View>
 
-        {/* Bill Info */}
         <View style={styles.infoSection}>
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Ma don hang:</Text>
@@ -231,29 +188,40 @@ const createBillDocument = (bill, details, storeName = "Acute Restaurant") => {
           </View>
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Phuong thuc:</Text>
-            <Text style={styles.infoValue}>{bill?.payment_method || "Cash"}</Text>
+            <Text style={styles.infoValue}>
+              {bill?.payment_method || "Cash"}
+            </Text>
           </View>
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Trang thai:</Text>
-            <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
-              <Text style={{ color: statusStyle.color, fontWeight: "bold" }}>{bill?.status}</Text>
+            <View
+              style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}
+            >
+              <Text style={{ color: statusStyle.color, fontWeight: "bold" }}>
+                {bill?.status}
+              </Text>
             </View>
           </View>
         </View>
 
-        {/* Table Header */}
         <View style={styles.table}>
           <View style={styles.tableHeader}>
             <Text style={[styles.tableHeaderText, styles.col1]}>Ten mon</Text>
             <Text style={[styles.tableHeaderText, styles.col2]}>SL</Text>
             <Text style={[styles.tableHeaderText, styles.col3]}>Don gia</Text>
-            <Text style={[styles.tableHeaderText, styles.col4]}>Thanh tien</Text>
+            <Text style={[styles.tableHeaderText, styles.col4]}>
+              Thanh tien
+            </Text>
           </View>
 
-          {/* Table Rows */}
           {details?.map((item, index) => (
-            <View key={item.id || index} style={index % 2 === 0 ? styles.tableRow : styles.tableRowAlt}>
-              <Text style={[styles.itemName, styles.col1]}>{item.menu_item?.name || "Unknown"}</Text>
+            <View
+              key={item.id || index}
+              style={index % 2 === 0 ? styles.tableRow : styles.tableRowAlt}
+            >
+              <Text style={[styles.itemName, styles.col1]}>
+                {item.menu_item?.name || "Unknown"}
+              </Text>
               <Text style={[styles.itemQty, styles.col2]}>{item.quantity}</Text>
               <Text style={[styles.itemPrice, styles.col3]}>
                 {formatCurrency(item.total_price / item.quantity)} d
@@ -265,11 +233,12 @@ const createBillDocument = (bill, details, storeName = "Acute Restaurant") => {
           ))}
         </View>
 
-        {/* Summary */}
         <View style={styles.summarySection}>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Tam tinh:</Text>
-            <Text style={styles.summaryValue}>{formatCurrency(subtotal)} d</Text>
+            <Text style={styles.summaryValue}>
+              {formatCurrency(subtotal)} d
+            </Text>
           </View>
           {discount > 0 && (
             <View style={styles.summaryRow}>
@@ -285,7 +254,6 @@ const createBillDocument = (bill, details, storeName = "Acute Restaurant") => {
           </View>
         </View>
 
-        {/* Footer */}
         <View style={styles.footer} fixed>
           <Text>Cam on quy khach da su dung dich vu!</Text>
           <Text style={{ marginTop: 5 }}>
@@ -297,9 +265,7 @@ const createBillDocument = (bill, details, storeName = "Acute Restaurant") => {
   );
 };
 
-// Export both the component and a helper function
 export { createBillDocument };
 export default function BillPDF({ bill, details, storeName }) {
   return createBillDocument(bill, details, storeName);
 }
-
